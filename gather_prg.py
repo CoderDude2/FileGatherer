@@ -42,10 +42,12 @@ def gather_prg(path=REMOTE_PRG_PATH):
     else:
         processed_files = os.listdir(os.path.join(path, "ALL"))
 
+    asc_folder = os.path.join(path, get_asc_folder_from_path(path))
     result = os.walk(path)
     for root, dirs, files in result:
         for name in files:
-            if(name not in processed_files and ".prg" in name):
+            if(name not in processed_files and ".prg" in name 
+               and root != asc_folder and root != os.path.join(path, "ALL")):
                 processed_files.append(name)
                 shutil.copy2(
                     os.path.join(root, name),
@@ -71,7 +73,8 @@ def gather_asc(path=REMOTE_PRG_PATH):
         result = os.walk(path)
         for root, dirs, files in result:
             for name in files:
-                if(name not in processed_files and ".prg" in name):
+                if(name not in processed_files and ".prg" in name 
+                   and root != asc_folder and root != os.path.join(path, "ALL")):
                     if(is_asc(os.path.join(root, name))):
                         processed_files.append(name)
                         shutil.copy2(
@@ -79,4 +82,3 @@ def gather_asc(path=REMOTE_PRG_PATH):
                             asc_folder
                             )
         update_asc_folder_name(path)
-        
