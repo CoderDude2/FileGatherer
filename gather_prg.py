@@ -6,19 +6,22 @@ import re
 
 asc_folder_regex = re.compile("\d+.\d+_ASC_\((\d+)\)")
 
-def get_asc_folder_from_path(path):
+def get_asc_folder_from_path(path) -> str:
     asc_folder_name = None
     for file in os.listdir(path):
-        if(asc_folder_regex.match(file)):
+        if(asc_folder_regex.match(file) and os.path.isdir(os.path.join(path, file))):
             asc_folder_name = file
     return asc_folder_name
 
-def update_asc_folder_name(path):
+def update_asc_folder_name(path) -> None:
     if(get_asc_folder_from_path(path)):
         asc_folder_name= get_asc_folder_from_path(path)
         new_folder_name = f'{datetime.datetime.now().month}.{datetime.datetime.now().day}_ASC_({len(os.listdir(os.path.join(path, asc_folder_name)))})'
 
-        os.rename(os.path.join(path, asc_folder_name), os.path.join(path, new_folder_name))
+        try:
+            os.rename(os.path.join(path, asc_folder_name), os.path.join(path, new_folder_name))
+        except FileNotFoundError:
+            print("File not found:", path)
 
 def create_asc_folder(path, date=datetime.datetime.now()):
     if(get_asc_folder_from_path(path)):
@@ -43,17 +46,21 @@ def gather_prg(path=REMOTE_PRG_PATH):
         processed_files = os.listdir(os.path.join(path, "ALL"))
 
     asc_folder = os.path.join(path, get_asc_folder_from_path(path))
-    result = os.walk(path)
-    for root, dirs, files in result:
-        for name in files:
-            if(name not in processed_files and ".prg" in name 
-               and root != asc_folder and root != os.path.join(path, "ALL")):
-                processed_files.append(name)
-                shutil.copy2(
-                    os.path.join(root, name),
-                    os.path.join(path, "ALL")
-                    )
-
+    if(asc_folder):
+        result = os.walk(path)
+        for root, dirs, files in result:
+            for name in files:
+                if(name not in processed_files and ".prg" in name 
+                and root != asc_folder and root != os.path.join(path, "ALL")):
+                    processed_files.append(name)
+                    try:
+                        shutil.copy2(
+                            os.path.join(root, name),
+                            os.path.join(path, "ALL")
+                            )
+                    except FileNotFoundError:
+                        print("File not found:", os.path.join(root, name))
+                    
 def is_asc(file):
     try:
         with open(file, 'r') as f:
@@ -62,7 +69,10 @@ def is_asc(file):
         if("ASC" in first_line and "4001" not in first_line):
             return True
         return False
-    except (FileNotFoundError, UnicodeDecodeError, PermissionError) as e:
+    except (FileNotFoundError, UnicodeDecodeError, PermissionError, OSError) as e:
+        if(e == OSError):
+            print("Contents:", contents)
+            print("File:",file)
         return None
 
 def gather_asc(path=REMOTE_PRG_PATH):
@@ -77,8 +87,12 @@ def gather_asc(path=REMOTE_PRG_PATH):
                    and root != asc_folder and root != os.path.join(path, "ALL")):
                     if(is_asc(os.path.join(root, name))):
                         processed_files.append(name)
-                        shutil.copy2(
-                            os.path.join(root, name),
-                            asc_folder
-                            )
+                        try:
+                            shutil.copy2(
+                                os.path.join(root, name),
+                                asc_folder
+                                )
+                        except FileNotFoundError:
+                            print("File not found:", os.path.join(root, name))
         update_asc_folder_name(path)
+

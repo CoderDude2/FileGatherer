@@ -1,0 +1,6 @@
+*.bat
+*.spec
+*.pyc
+/build
+/dist
+/__pycache__
