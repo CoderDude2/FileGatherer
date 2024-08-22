@@ -3,8 +3,16 @@ import os
 import shutil
 import time
 import re
+from dataclasses import dataclass
+from subprocess import call
 
 asc_folder_regex = re.compile("\d+.\d+_ASC_\((\d+)\)")
+
+@dataclass
+class Entry:
+    name:str
+    prg_folder:str
+    files:set = None
 
 def get_asc_folder_from_path(path) -> str:
     asc_folder_name = None
@@ -36,7 +44,8 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-REMOTE_PRG_PATH = f"//192.168.1.100/Trubox/####ERP_RM####/{date_as_path()}/1. CAM/3. NC files/"
+# REMOTE_PRG_PATH = f"//192.168.1.100/Trubox/####ERP_RM####/{date_as_path()}/1. CAM/3. NC files/"
+REMOTE_PRG_PATH = r"C:\Users\TruUser\Documents\NC"
 
 def gather_prg(path=REMOTE_PRG_PATH):
     processed_files = []
@@ -44,22 +53,64 @@ def gather_prg(path=REMOTE_PRG_PATH):
         os.mkdir(os.path.join(path, "ALL"))
     else:
         processed_files = os.listdir(os.path.join(path, "ALL"))
+    
+    with open("names.txt", 'r') as file:
+        contents = file.read()
+    
+    contents = contents.split("\n")
+    entries:list[Entry] = []
 
-    asc_folder = os.path.join(path, get_asc_folder_from_path(path))
-    if(asc_folder):
-        result = os.walk(path)
-        for root, dirs, files in result:
-            for name in files:
-                if(name not in processed_files and ".prg" in name 
-                and root != asc_folder and root != os.path.join(path, "ALL")):
-                    processed_files.append(name)
-                    try:
-                        shutil.copy2(
-                            os.path.join(root, name),
-                            os.path.join(path, "ALL")
-                            )
-                    except FileNotFoundError:
-                        print("File not found:", os.path.join(root, name))
+    for name in contents:
+        entries.append(Entry(name, os.path.join(path, name), set()))
+    
+    s = time.perf_counter()
+    for entry in entries:
+        # print(entry.name, entry.prg_folder)
+        for dir in os.listdir(entry.prg_folder):
+            dir = os.path.join(entry.prg_folder, dir)
+
+            if(os.path.isdir(dir)):
+                for file in os.listdir(dir):
+                    if file.split(".")[1] == "prg":
+                        shutil.copy(os.path.join(dir, file), os.path.join(path, "ALL", file))
+                        # with open(os.path.join(dir, file),'rb') as original_file:
+                        #     with open(os.path.join(path, "ALL", file), 'wb+') as new_file:
+                        #         shutil.copyfileobj(original_file, new_file, 10485760)
+                        processed_files.append(file)
+
+            # elif(os.path.isfile(dir) and os.path.split(dir)[1].split(".")[1] == "prg"):
+            #     processed_files.append(os.path.split(dir)[1].split(".")[1])
+        
+    e = time.perf_counter()
+    print(e-s,"seconds")
+    print(len(processed_files))
+    # print([entry.files for entry in entries])
+    # for entry in os.listdir(path):
+        # 
+            # if(entry == name):
+            #     sub_entry = os.listdir(os.path.join(path, name))
+                
+    # processed_files = []
+    # if("ALL" not in os.listdir(path)):
+    #     os.mkdir(os.path.join(path, "ALL"))
+    # else:
+    #     processed_files = os.listdir(os.path.join(path, "ALL"))
+
+    # asc_folder = os.path.join(path, get_asc_folder_from_path(path))
+    # if(asc_folder):
+    #     result = os.walk(path)
+    #     for root, dirs, files in result:
+    #         for name in files:
+    #             if(name not in processed_files and ".prg" in name 
+    #             and root != asc_folder and root != os.path.join(path, "ALL")):
+    #                 processed_files.append(name)
+    #                 try:
+    #                     shutil.copy2(
+    #                         os.path.join(root, name),
+    #                         os.path.join(path, "ALL")
+    #                         )
+    #                 except FileNotFoundError:
+    #                     print("File not found:", os.path.join(root, name))
                     
 def is_asc(file):
     try:
