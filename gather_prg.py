@@ -48,11 +48,11 @@ def date_as_path(date=None):
 REMOTE_PRG_PATH = r"C:\Users\TruUser\Documents\NC"
 
 def gather_prg(path=REMOTE_PRG_PATH):
-    processed_files = []
+    processed_files = set()
     if("ALL" not in os.listdir(path)):
         os.mkdir(os.path.join(path, "ALL"))
     else:
-        processed_files = os.listdir(os.path.join(path, "ALL"))
+        processed_files = set(os.listdir(os.path.join(path, "ALL")))
     
     with open("names.txt", 'r') as file:
         contents = file.read()
@@ -68,19 +68,21 @@ def gather_prg(path=REMOTE_PRG_PATH):
         # print(entry.name, entry.prg_folder)
         for dir in os.listdir(entry.prg_folder):
             dir = os.path.join(entry.prg_folder, dir)
-
-            if(os.path.isdir(dir)):
+            if os.path.isdir(dir):
                 for file in os.listdir(dir):
-                    if file.split(".")[1] == "prg":
-                        shutil.copy(os.path.join(dir, file), os.path.join(path, "ALL", file))
-                        # with open(os.path.join(dir, file),'rb') as original_file:
-                        #     with open(os.path.join(path, "ALL", file), 'wb+') as new_file:
-                        #         shutil.copyfileobj(original_file, new_file, 10485760)
-                        processed_files.append(file)
+                    if file.split(".")[1] == "prg" and file not in processed_files:
+                        os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
+                        processed_files.add(file)
+                    else:
+                        if os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, "ALL", file)).st_mtime:
+                            os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
+                    
+            if os.path.isfile(dir):
+                file = os.path.split(dir)[1]
+                if file.split(".")[1] == "prg" and file not in processed_files:
+                    os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, "ALL", file)}"')
+                    processed_files.add(file)
 
-            # elif(os.path.isfile(dir) and os.path.split(dir)[1].split(".")[1] == "prg"):
-            #     processed_files.append(os.path.split(dir)[1].split(".")[1])
-        
     e = time.perf_counter()
     print(e-s,"seconds")
     print(len(processed_files))
