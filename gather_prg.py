@@ -44,8 +44,7 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-REMOTE_PRG_PATH = fr"\\192.168.1.100\\Trubox\\####ERP_RM####\\{date_as_path()}\\1. CAM\\3. NC files\\"
-# REMOTE_PRG_PATH = r"C:\Users\TruUser\Documents\NC"
+REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
 
 def gather_prg(path=REMOTE_PRG_PATH):
     processed_files = set()
@@ -142,3 +141,6 @@ def gather_asc(path=REMOTE_PRG_PATH):
             update_asc_folder_name(path)
         except PermissionError:
             print("ASC folder is opened in another process. Cannot rename.")
+
+if __name__ == "__main__":
+    print(REMOTE_PRG_PATH)
