@@ -68,20 +68,20 @@ def gather_prg(path=REMOTE_PRG_PATH):
             if os.path.isdir(dir):
                 for file in os.listdir(dir):
                     if os.path.isfile(os.path.join(dir, file)) and file.split(".")[1] == "prg" and file not in processed_files:
-                        os.system(f'echo F |xcopy \Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
+                        os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
                         processed_files.add(file)
                     else:
                         if os.path.isfile(os.path.join(dir, file)) and os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, "ALL", file)).st_mtime:
-                            os.system(f'echo F |xcopy \Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
+                            os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
                     
             if os.path.isfile(dir):
                 file = os.path.split(dir)[1]
                 if file.split(".")[1] == "prg" and file not in processed_files:
-                    os.system(f'echo F |xcopy \Y "{os.path.join(dir)}" "{os.path.join(path, "ALL", file)}"')
+                    os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, "ALL", file)}"')
                     processed_files.add(file)
                 else:
                     if os.stat(os.path.join(dir)).st_mtime != os.stat(os.path.join(path, "ALL", file)).st_mtime:
-                        os.system(f'echo F |xcopy \Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
+                        os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(path, "ALL", file)}"')
                     
 def is_asc(file):
     try:
@@ -122,20 +122,20 @@ def gather_asc(path=REMOTE_PRG_PATH):
                     for file in os.listdir(dir):
                         if(is_asc(os.path.join(dir,file))):
                             if file.split(".")[1] == "prg" and file not in processed_files:
-                                os.system(f'echo F |xcopy \Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
+                                os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
                                 processed_files.add(file)
                             else:
                                 if os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(asc_folder, file)).st_mtime:
-                                    os.system(f'echo F |xcopy \Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
+                                    os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
                         
                 if os.path.isfile(dir) and is_asc(dir):
                     file = os.path.split(dir)[1]
                     if file.split(".")[1] == "prg" and file not in processed_files:
-                        os.system(f'echo F |xcopy \Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
+                        os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
                         processed_files.add(file)
                     else:
                         if os.stat(os.path.join(dir)).st_mtime != os.stat(os.path.join(asc_folder, file)).st_mtime:
-                            os.system(f'echo F |xcopy \Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
+                            os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
 
         try:
             update_asc_folder_name(path)
