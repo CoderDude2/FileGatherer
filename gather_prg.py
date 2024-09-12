@@ -5,6 +5,16 @@ from dataclasses import dataclass
 
 asc_folder_regex = re.compile("\d+.\d+_ASC_\((\d+)\)")
 
+def date_as_path(date=None):
+    if(date == None):
+        date = datetime.datetime.now().date()
+    _day = f'D{"0"+str(date.day) if date.day < 10 else str(date.day)}'
+    _month = f'M{"0"+str(date.month) if date.month < 10 else str(date.month)}'
+    _year = f'Y{str(date.year)}'
+    return os.path.join(_year, _month, _day)
+
+REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+
 @dataclass
 class Entry:
     name:str
@@ -32,16 +42,6 @@ def create_asc_folder(path, date=datetime.datetime.now()):
     if(get_asc_folder_from_path(path)):
         return
     os.mkdir(os.path.join(path, f'{date.month}.{date.day}_ASC_(0)'))
-
-def date_as_path(date=None):
-    if(date == None):
-        date = datetime.datetime.now().date()
-    _day = f'D{"0"+str(date.day) if date.day < 10 else str(date.day)}'
-    _month = f'M{"0"+str(date.month) if date.month < 10 else str(date.month)}'
-    _year = f'Y{str(date.year)}'
-    return os.path.join(_year, _month, _day)
-
-REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
 
 def gather_prg(path=REMOTE_PRG_PATH):
     processed_files = set()
