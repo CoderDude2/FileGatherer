@@ -49,7 +49,6 @@ class App(tk.Tk):
   def auto_gather(self, path, disable_event:threading.Event, enabled_event:threading.Event):
     while True:
       if(enabled_event.is_set()):
-          gather_prg.gather_asc(path)
           gather_prg.gather_prg(path)
           time.sleep(1)
       if(disable_event.is_set()):
@@ -57,8 +56,6 @@ class App(tk.Tk):
 
 
 def main():
-  if(gather_prg.get_asc_folder_from_path(gather_prg.REMOTE_PRG_PATH) == None):
-        gather_prg.create_asc_folder(gather_prg.REMOTE_PRG_PATH)
   app = App()
   app.mainloop()
 
