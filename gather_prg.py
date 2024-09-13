@@ -79,7 +79,6 @@ def gather_prg(path=REMOTE_PRG_PATH):
                         
                 if os.path.isfile(dir):
                     file = os.path.split(dir)[1]
-                    print(file)
                     if file.split(".")[1] == "prg":
                         if file not in processed_files:
                             xcopy(os.path.join(dir), os.path.join(path, "ALL", file))
@@ -104,50 +103,50 @@ def is_asc(file):
         return None
 
 def gather_asc(path=REMOTE_PRG_PATH):
-    if(get_asc_folder_from_path(path)):
-        asc_folder = os.path.join(path, get_asc_folder_from_path(path))
-        processed_files = set(os.listdir(asc_folder))
-    else:
-        create_asc_folder(path)
-        asc_folder = os.path.join(path, get_asc_folder_from_path(path))
-        processed_files = set(os.listdir(asc_folder))
-
-        with open("names.txt", 'r') as file:
-            contents = file.read()
     
-        contents = contents.split("\n")
-        entries:list[Entry] = []
+    asc_folder = get_asc_folder_from_path(path)
 
-        for name in contents:
-            entries.append(Entry(name, os.path.join(path, name), set()))
+    if(not asc_folder):
+        create_asc_folder(path)
+        asc_folder = get_asc_folder_from_path(path)
+    
+    processed_files = set(os.listdir(os.path.join(path, asc_folder)))
 
-        try:
-            for entry in entries:
-                for dir in os.listdir(entry.prg_folder):
-                    dir = os.path.join(entry.prg_folder, dir)
-                    if os.path.isdir(dir):
-                        for file in os.listdir(dir):
-                            if(is_asc(os.path.join(dir,file))):
-                                if file.split(".")[1] == "prg" and file not in processed_files:
-                                    os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
-                                    processed_files.add(file)
-                                else:
-                                    if os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(asc_folder, file)).st_mtime:
-                                        os.system(f'echo F |xcopy /Y "{os.path.join(dir, file)}" "{os.path.join(asc_folder, file)}"')
-                            
-                    if os.path.isfile(dir) and is_asc(dir):
-                        file = os.path.split(dir)[1]
-                        if file.split(".")[1] == "prg" and file not in processed_files:
-                            os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
+    with open("names.txt", 'r') as file:
+        contents = file.read()
+
+    contents = contents.split("\n")
+    entries:list[Entry] = []
+
+    for name in contents:
+        entries.append(Entry(name, os.path.join(path, name), set()))
+
+    try:
+        for entry in entries:
+            for dir in os.listdir(entry.prg_folder):
+                dir = os.path.join(entry.prg_folder, dir)
+                if os.path.isdir(dir):
+                    for file in os.listdir(dir):
+                        if os.path.isfile(os.path.join(dir,file)) and is_asc(os.path.join(dir,file)) and file.split(".")[1] == "prg":
+                            if file not in processed_files:
+                                xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))
+                                print("Copied")
+                                processed_files.add(file)
+                            elif os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, asc_folder, file)).st_mtime:
+                                xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))      
+                elif os.path.isfile(dir) and is_asc(dir):
+                    file = os.path.split(dir)[1]
+                    if file.split(".")[1] == "prg":
+                        if file not in processed_files:
+                            xcopy(os.path.join(dir), os.path.join(path, asc_folder, file))
                             processed_files.add(file)
-                        else:
-                            if os.stat(os.path.join(dir)).st_mtime != os.stat(os.path.join(asc_folder, file)).st_mtime:
-                                os.system(f'echo F |xcopy /Y "{os.path.join(dir)}" "{os.path.join(path, asc_folder)}"')
-        except (OSError, PermissionError, FileExistsError, FileNotFoundError) as e:
-            print(e)
-            pass
+                        elif os.stat(os.path.join(dir)).st_mtime != os.stat(os.path.join(path, asc_folder, file)).st_mtime:
+                            xcopy(os.path.join(dir), os.path.join(path, asc_folder, file))
+    except (OSError, PermissionError, FileExistsError, FileNotFoundError) as e:
+        print(e)
+        pass
 
-        try:
-            update_asc_folder_name(path)
-        except PermissionError:
-            print("ASC folder is opened in another process. Cannot rename.")
+    try:
+        update_asc_folder_name(path)
+    except PermissionError:
+        print("ASC folder is opened in another process. Cannot rename.")

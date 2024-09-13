@@ -50,6 +50,7 @@ class App(tk.Tk):
     while True:
       if(enabled_event.is_set()):
           gather_prg.gather_prg(path)
+          gather_prg.gather_asc(path)
           time.sleep(1)
       if(disable_event.is_set()):
           return False
