@@ -1,59 +1,73 @@
 import tkinter as tk
-import gather_prg
 import threading
 import time
 
+import gather_prg
+import info_widget
+
 class App(tk.Tk):
-  def __init__(self):
-    super().__init__()
-    self.geometry("200x200")
-    self.title("File Gather")
-    self.protocol("WM_DELETE_WINDOW", self.on_close)
+    def __init__(self):
+        super().__init__()
+        self.minsize(500, 300)
+        self.geometry("500x300")
+        self.title("File Gather")
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
-    self.grid_columnconfigure(0, weight=1)
-    self.grid_rowconfigure(1, weight=1)
-    self.grid_rowconfigure(2, weight=1)
+        self.auto_check = tk.BooleanVar()
 
-    self.auto_check = tk.BooleanVar()
+        self.control_frame = tk.Frame(master=self)
+        self.auto_gather_checkbutton = tk.Checkbutton(master=self.control_frame, text="Auto Gather", variable=self.auto_check, onvalue=True, offvalue=False, command=self.on_auto_gather_toggle)
+        self.gather_prg_button = tk.Button(master=self.control_frame, text="Gather All NC", command=gather_prg.gather_prg, padx=20, pady=20)
+        self.gather_asc_button = tk.Button(master=self.control_frame, text="Gather All ASC", command=gather_prg.gather_asc, padx=20, pady=20)
 
-    self.auto_gather_checkbutton = tk.Checkbutton(master=self, text="Auto Gather", variable=self.auto_check, onvalue=True, offvalue=False, command=self.on_auto_gather_toggle)
-    self.gather_prg_button = tk.Button(master=self, text="Gather All NC", command=gather_prg.gather_prg)
-    self.gather_asc_button = tk.Button(master=self, text="Gather All ASC", command=gather_prg.gather_asc)
+        self.info_widget_1 = info_widget.InfoWidget()
+        i = info_widget.Issue(info_widget.IssueType.SUBPROGRAM_ERR, "1234", "Isaac", "1", "Missing sub program $2")
+        i2 = info_widget.Issue(info_widget.IssueType.DUPLICATE_PRG, "2222", "Ryan", "4", "Duplicate file")
+        self.info_widget_1.addIssue(i)
+        self.info_widget_1.addIssue(i2)
 
-    self.auto_gather_checkbutton.grid(row=0, column=0, sticky='nsew')
-    self.gather_prg_button.grid(row=1, column=0, sticky='nsew')
-    self.gather_asc_button.grid(row=2, column=0, sticky='nsew')
 
-    self.stop_event = threading.Event()
-    self.enabled_event = threading.Event()
-    self.auto_gather_thread = threading.Thread(target=self.auto_gather, args=[gather_prg.REMOTE_PRG_PATH, self.stop_event, self.enabled_event])
-    self.auto_gather_thread.start()
-  
-  def print_value(self):
-     print(self.auto_check.get())
+        self.auto_gather_checkbutton.pack(side=tk.TOP)
+        self.gather_prg_button.pack(fill=tk.X, side=tk.TOP)
+        self.gather_asc_button.pack(fill=tk.X, side=tk.TOP)
 
-  def on_auto_gather_toggle(self):
-     if(self.enabled_event.is_set()):
-        self.enabled_event.clear()
-        self.gather_prg_button.configure(state=tk.NORMAL)
-        self.gather_asc_button.configure(state=tk.NORMAL)
-     else:
-        self.enabled_event.set()
-        self.gather_prg_button.configure(state=tk.DISABLED)
-        self.gather_asc_button.configure(state=tk.DISABLED)
+        self.control_frame.grid(row=0, column=0, sticky='nsew')
+        self.info_widget_1.grid(row=0, column=1, sticky='nsew')
 
-  def on_close(self):
-     self.stop_event.set()
-     self.destroy()
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-  def auto_gather(self, path, disable_event:threading.Event, enabled_event:threading.Event):
-    while True:
-      if(enabled_event.is_set()):
-          gather_prg.gather_prg(path)
-          gather_prg.gather_asc(path)
-          time.sleep(1)
-      if(disable_event.is_set()):
-          return False
+        self.stop_event = threading.Event()
+        self.enabled_event = threading.Event()
+        self.auto_gather_thread = threading.Thread(target=self.auto_gather, args=[gather_prg.REMOTE_PRG_PATH, self.stop_event, self.enabled_event])
+        self.auto_gather_thread.start()
+
+    def print_value(self):
+        print(self.auto_check.get())
+
+    def on_auto_gather_toggle(self):
+        if(self.enabled_event.is_set()):
+            self.enabled_event.clear()
+            self.gather_prg_button.configure(state=tk.NORMAL)
+            self.gather_asc_button.configure(state=tk.NORMAL)
+        else:
+            self.enabled_event.set()
+            self.gather_prg_button.configure(state=tk.DISABLED)
+            self.gather_asc_button.configure(state=tk.DISABLED)
+
+    def on_close(self):
+        self.stop_event.set()
+        self.destroy()
+
+    def auto_gather(self, path, disable_event:threading.Event, enabled_event:threading.Event):
+        while True:
+            if(enabled_event.is_set()):
+                gather_prg.gather_prg(path)
+                gather_prg.gather_asc(path)
+                time.sleep(1)
+            if(disable_event.is_set()):
+                return False
 
 def main():
   app = App()

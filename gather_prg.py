@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 
-asc_folder_regex = re.compile("\d+.\d+_ASC_\((\d+)\)")
+asc_folder_regex = re.compile(r"\d+.\d+_ASC_\((\d+)\)")
 
 def date_as_path(date=None):
     if(date == None):
@@ -13,7 +13,8 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+REMOTE_PRG_PATH="./nc"
 
 @dataclass
 class Entry:
@@ -22,7 +23,10 @@ class Entry:
     files:set = None
 
 def xcopy(src:str, dst:str) -> None:
-    os.system(f'echo F |xcopy /Y "{src}" "{dst}"')
+    if os.name == 'nt':
+        os.system(f'echo F |xcopy /Y "{src}" "{dst}"')
+    elif os.name == 'posix':
+        os.system(f'cp "{src}" "{dst}"')
 
 def get_asc_folder_from_path(path) -> str:
     asc_folder_name = None
@@ -130,7 +134,6 @@ def gather_asc(path=REMOTE_PRG_PATH):
                         if os.path.isfile(os.path.join(dir,file)) and is_asc(os.path.join(dir,file)) and file.split(".")[1] == "prg":
                             if file not in processed_files:
                                 xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))
-                                print("Copied")
                                 processed_files.add(file)
                             elif os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, asc_folder, file)).st_mtime:
                                 xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))      
@@ -150,3 +153,4 @@ def gather_asc(path=REMOTE_PRG_PATH):
         update_asc_folder_name(path)
     except PermissionError:
         print("ASC folder is opened in another process. Cannot rename.")
+
