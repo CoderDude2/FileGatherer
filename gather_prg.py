@@ -71,16 +71,16 @@ def gather_prg(path=REMOTE_PRG_PATH):
                 dir = os.path.join(entry.prg_folder, dir)
                 if os.path.isdir(dir):
                     for file in os.listdir(dir):
-                        if os.path.isfile(os.path.join(dir, file)) and file.split(".")[1] == "prg":
+                        if os.path.isfile(os.path.join(dir, file)) and file.split(".")[1] == "prg" and contains_subprogram(os.path.join(dir,file), "$2"):
                             if file not in processed_files:
                                 xcopy(os.path.join(dir, file), 
                                       os.path.join(path, "ALL", file))
                                 processed_files.add(file)
-                            elif os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, "ALL", file)).st_mtime:
+                            elif (os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, "ALL", file)).st_mtime) and contains_subprogram(os.path.join(dir,file), "$2"):
                                 xcopy(os.path.join(dir, file), 
                                       os.path.join(path, "ALL", file))
                         
-                if os.path.isfile(dir):
+                if os.path.isfile(dir) and contains_subprogram(os.path.join(dir), "$2"):
                     file = os.path.split(dir)[1]
                     if file.split(".")[1] == "prg":
                         if file not in processed_files:
@@ -104,9 +104,21 @@ def is_asc(file):
             print("Contents:", contents)
             print("File:",file)
         return None
+    
+def contains_subprogram(file, subprogram) -> bool:
+    try:
+        with open(file, 'r') as file:
+            contents = file.readlines()
+        contents.reverse()
+        for line in contents:
+            if subprogram in line:
+                return True
+        return False
+    except (FileNotFoundError, UnicodeDecodeError, PermissionError, OSError) as e:
+        print(e)
+    return None
 
 def gather_asc(path=REMOTE_PRG_PATH):
-    
     asc_folder = get_asc_folder_from_path(path)
 
     if(not asc_folder):
@@ -130,13 +142,13 @@ def gather_asc(path=REMOTE_PRG_PATH):
                 dir = os.path.join(entry.prg_folder, dir)
                 if os.path.isdir(dir):
                     for file in os.listdir(dir):
-                        if os.path.isfile(os.path.join(dir,file)) and is_asc(os.path.join(dir,file)) and file.split(".")[1] == "prg":
+                        if os.path.isfile(os.path.join(dir,file)) and is_asc(os.path.join(dir,file)) and contains_subprogram(os.path.join(dir,file), "$2") and file.split(".")[1] == "prg":
                             if file not in processed_files:
                                 xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))
                                 processed_files.add(file)
-                            elif os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, asc_folder, file)).st_mtime:
+                            elif (os.stat(os.path.join(dir, file)).st_mtime != os.stat(os.path.join(path, asc_folder, file)).st_mtime) and contains_subprogram(os.path.join(dir,file), "$2"):
                                 xcopy(os.path.join(dir, file), os.path.join(path, asc_folder, file))      
-                elif os.path.isfile(dir) and is_asc(dir):
+                elif os.path.isfile(dir) and is_asc(dir) and contains_subprogram(dir, "$2"):
                     file = os.path.split(dir)[1]
                     if file.split(".")[1] == "prg":
                         if file not in processed_files:
