@@ -52,6 +52,10 @@ def check(path):
         
         if '$2' in line:
             contains_subprogram_2 = True
+        
+        if "#100=" in line:
+            part_length = float(line.split(" ")[1])
+            result["part_length"] = part_length
 
     if not contains_subprogram_0: 
         result['errors'].append((IssueType.SUBPROGRAM_ERR, "Missing $0 subprogram"))
@@ -66,13 +70,17 @@ for root, dirs, files in os.walk("./nc"):
     if len(files) > 0 and os.path.basename(root) != "ALL":
         for name in files:
             if name.split(".")[1] == "prg":
-                print(name, root)
-                print(check(os.path.join(root,name)))
                 if file_hashmap.get(name):
-                    file_hashmap[name].append(root)
+                    
+                    file_hashmap[name]["locations"].append(root)
+                    if len(file_hashmap[name]["locations"]) > 0:
+                        file_hashmap[name]["data"]["errors"].append((IssueType.DUPLICATE_PRG, f"{name} also in {os.path.join(root, name)}"))
                 else:
-                    file_hashmap[name] = []
-                    file_hashmap[name].append(root)
+                    file_data = check(os.path.join(root,name))
+                    file_hashmap[name] = {
+                        "locations":[root],
+                        "data":file_data
+                        }
 
-# for i in file_hashmap:
-#     print(i, file_hashmap[i])
+for i in file_hashmap:
+    print(i, file_hashmap[i])
