@@ -22,7 +22,7 @@ class InfoWidget(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
 
-        self.text = tk.Text(self, wrap='word', state='disabled', font="Arial 14")
+        self.text = tk.Text(self, wrap='word', state='disabled', font="Arial 12")
         self.info_count = 0
         self.issue_list:list[Issue] = []
 
@@ -32,7 +32,7 @@ class InfoWidget(tk.Frame):
         self.text.tag_configure('odd', background="#DDDDDD", foreground="black")
         self.text.tag_configure('error', background='#F7B0B0')
         self.text.tag_configure('warning', background='#F7CCB0')
-        self.text.tag_configure('issue_message', font="Arial 14 underline bold")
+        self.text.tag_configure('issue_message', font="Arial 12 underline bold")
         
         self.text.insert("1.0", "Info\n", ('info'))
         self.text.insert("1.0", "Warning\n", ('warning'))
