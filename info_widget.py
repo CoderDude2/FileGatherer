@@ -22,7 +22,7 @@ class InfoWidget(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
 
-        self.text = tk.Text(self, wrap='word', state='disabled', font="Arial 12")
+        self.text = tk.Text(self, wrap='none', state='disabled', font="Arial 11")
         self.info_count = 0
         self.issue_list:list[Issue] = []
 
@@ -32,7 +32,7 @@ class InfoWidget(tk.Frame):
         self.text.tag_configure('odd', background="#DDDDDD", foreground="black")
         self.text.tag_configure('error', background='#F7B0B0')
         self.text.tag_configure('warning', background='#F7CCB0')
-        self.text.tag_configure('issue_message', font="Arial 12 underline bold")
+        self.text.tag_configure('issue_message', font="Arial 11 bold")
         
         self.text.insert("1.0", "Info\n", ('info'))
         self.text.insert("1.0", "Warning\n", ('warning'))
@@ -42,8 +42,12 @@ class InfoWidget(tk.Frame):
         self.ys = ttk.Scrollbar(self, orient='vertical', command=self.text.yview)
         self.text['yscrollcommand'] = self.ys.set
 
+        self.xs = ttk.Scrollbar(self, orient='horizontal', command=self.text.xview)
+        self.text['xscrollcommand'] = self.xs.set
+
         self.text.grid(column=0, row=0, sticky='nsew')
         self.ys.grid(column=1, row=0, sticky='ns')
+        self.xs.grid(column=0, row=1, sticky='ew')
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
