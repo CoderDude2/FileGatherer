@@ -8,6 +8,7 @@ import info_widget
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+
         self.minsize(500, 300)
         self.geometry("500x300")
         self.title("File Gather")
@@ -21,11 +22,6 @@ class App(tk.Tk):
         self.gather_asc_button = tk.Button(master=self.control_frame, text="Gather All ASC", command=gather_prg.gather_asc, padx=20, pady=20)
 
         self.info_widget_1 = info_widget.InfoWidget()
-        i = info_widget.Issue(info_widget.IssueType.SUBPROGRAM_ERR, "1234", "Isaac", "1", "Missing sub program $2")
-        i2 = info_widget.Issue(info_widget.IssueType.DUPLICATE_PRG, "2222", "Ryan", "4", "Duplicate file")
-        self.info_widget_1.addIssue(i)
-        self.info_widget_1.addIssue(i2)
-
 
         self.auto_gather_checkbutton.pack(side=tk.TOP)
         self.gather_prg_button.pack(fill=tk.X, side=tk.TOP)

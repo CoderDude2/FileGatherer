@@ -29,8 +29,10 @@ class Issue:
         return (self.issue_type == other.issue_type)
     
     def serialize_json(self):
-        serialized_issue = self.__dict__
-        serialized_issue['issue_type'] = serialized_issue['issue_type'].value
+        serialized_issue = {
+            'issue_type':self.issue_type.value,
+            'message':self.message
+        }
         return serialized_issue
 
     @classmethod
@@ -50,7 +52,9 @@ class FileData:
     part_length:float = 0
     cut_off:float = 0
     
-    
+    def has_issues(self) -> bool:
+        return len(self.issues) > 0
+
     def add_issue(self, issue_type:IssueType, message:str):
         i = Issue(issue_type, message)
         if i not in self.issues:
@@ -122,8 +126,16 @@ class FileData:
         return fileData
 
     def serialize_json(self):
-        serialized_output = self.__dict__
-        serialized_output['issues'] = [issue.serialize_json() for issue in serialized_output['issues']]
+        serialized_output = {
+            'file_name':self.file_name,
+            'location':self.location,
+            'file_inode':self.file_inode,
+            'file_mtime':self.file_mtime,
+            'case_type':self.case_type,
+            'issues':[issue.serialize_json() for issue in self.issues],
+            'part_length':self.part_length,
+            'cut_off':self.cut_off
+        }
         return serialized_output
 
     @classmethod
@@ -148,31 +160,49 @@ class FileData:
         )
 
 class FileManager:
-    def __init__(self):
+    def __init__(self):  
         self.file_hashmap = {}
+        self.load()
     
     def scan_folder(self):
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
-                for name in files:
-                    if not self.file_hashmap.get(name):
-                        data = FileData.from_path(os.path.join(root, name))
-                        self.file_hashmap[name] = data
-                    else:
-                        fd:FileData = self.file_hashmap[name]
-                        f_stat = os.stat(os.path.join(root, name))
+                try:
+                    for name in files:
+                        if not self.file_hashmap.get(name):
+                            data = FileData.from_path(os.path.join(root, name))
+                            self.file_hashmap[name] = data
+                            print(len(fm.file_hashmap.keys()))
+                        else:
+                            fd:FileData = self.file_hashmap[name]
+                            f_stat = os.stat(os.path.join(root, name))
 
-                        if fd.location == root:
-                            if f_stat.st_mtime != fd.file_mtime:
-                                new_data = FileData.from_path(os.path.join(root, name))
-                                self.file_hashmap[name] = new_data
-
+                            if fd.location == root:
+                                if f_stat.st_mtime != fd.file_mtime:
+                                    new_data = FileData.from_path(os.path.join(root, name))
+                                    self.file_hashmap[name] = new_data
+                except PermissionError:
+                    print('Permission Denied')
 
     def save(self):
-        serialized_output = self.__dict__
-        for key in serialized_output['file_hashmap'].keys():
-            serialized_output['file_hashmap'][key] = serialized_output['file_hashmap'][key].serialize_json()
+        keys_to_remove = []
+        for key,value in self.file_hashmap.items():
+            if not os.path.exists(os.path.join(value.location, value.file_name)):
+                keys_to_remove.append(key)
+        
+        for key in keys_to_remove:
+            del(self.file_hashmap[key])
+
+        serialized_output = {
+            'file_hashmap':{
+
+            }
+        }
+
+        for key in self.file_hashmap.keys():
+            serialized_output['file_hashmap'][key] = self.file_hashmap[key].serialize_json()
         json_string = json.dumps(serialized_output, indent=' ')
+
         with open('data.json', 'w+') as file:
             file.write(json_string)
 
@@ -184,3 +214,11 @@ class FileManager:
         self.file_hashmap = loaded_json['file_hashmap']
         for i in self.file_hashmap.keys():
             self.file_hashmap[i] = FileData.deserialize_json(self.file_hashmap[i])
+
+if __name__ == "__main__":
+    fm = FileManager()
+    try:
+        while True:
+            fm.scan_folder()
+    except KeyboardInterrupt:
+        fm.save()

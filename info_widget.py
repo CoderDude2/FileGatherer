@@ -1,22 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
-import enum
-
-import gather_prg
-
-class IssueType(enum.Enum):
-    SUBPROGRAM_ERR=1
-    INVALID_NAME_ERR=2
-    DUPLICATE_PRG=3
+from file_manager import FileData, IssueType, Issue
 
 @dataclass
-class Issue:
-    issue_type:IssueType
-    id:str
-    associate:str
-    folder:str
-    message:str
+class GUIError:
+    pass
 
 class InfoWidget(tk.Frame):
     def __init__(self, master=None):
@@ -62,51 +51,32 @@ class InfoWidget(tk.Frame):
             elif bg_tag == 'odd':
                 bg_tag = 'even'
 
-            header = f' File: {i.id}.prg\n Location: \\\\192.168.1.100\Trubox\####ERP_RM####\{gather_prg.date_as_path()}\\1. CAM\\3. NC files\{i.associate}\{i.folder} (10)'
-            message = f' {i.message} '
-
             match i.issue_type:
-                case IssueType.SUBPROGRAM_ERR:
+                case IssueType.SUBPROGRAM_1_ERR:
                     self.text.insert('end', '\n', ('error', 'spacer2'))
-                    self.text.insert('end'," Error: Subprogram Missing\n", ('error', 'issue_message',bg_tag))
-                    self.text.insert('end',header + '\n', ('error', bg_tag))
-                    self.text.insert('end',message + '\n', ('error', bg_tag))
+                    self.text.insert('end'," Error: Subprogram Missing\n", ('error', 'issue_message', bg_tag))
+                    self.text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
                     self.text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.INVALID_NAME_ERR:
+                    self.text.insert('end', '\n', ('error', 'spacer2'))
                     self.text.insert('end'," Error: Invalid Name\n", ('error', 'issue_message', bg_tag))
+                    self.text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
                     self.text.insert('end', '\n', ('error', 'spacer2'))
-                    self.text.insert('end',header + '\n', ('error', bg_tag))
-                    self.text.insert('end', '\n', ('error', 'spacer2'))
-                case IssueType.DUPLICATE_PRG:
-                    self.text.insert('end', '\n', ('warning', 'spacer2'))
-                    self.text.insert('end'," Warning: Duplicate File\n", ('warning', 'issue_message', bg_tag))
-                    self.text.insert('end',header + '\n', ('warning', bg_tag))
-                    self.text.insert('end',message + '\n', ('warning', bg_tag))
-                    self.text.insert('end', '\n', ('warning', 'spacer2'))
             self.text.insert('end', '\n', ('spacer'))
         self.text['state'] = 'disabled'
     
-    def addIssue(self, issue):
-        self.issue_list.append(issue)
-        self.render()
+    def addError():
+        pass
 
 
 if __name__ == "__main__":
-    i = Issue(IssueType.SUBPROGRAM_ERR, "1234", "Isaac", "1", "Missing sub program $2")
-    i2 = Issue(IssueType.INVALID_NAME_ERR, "4001", "Ryan", "4", "Invalid PRG name")
-    i3 = Issue(IssueType.INVALID_NAME_ERR, "0", "Eduardo", "2", "Invalid PRG name")
-    i4 = Issue(IssueType.DUPLICATE_PRG, "3333", "Ryan", "4", "3333 also in Isaac's Folder 2")
-
     root = tk.Tk()
     root.geometry("500x300")
     root.minsize(500, 300)
     f = tk.Frame(root)
 
+    # fd = FileData.from_path(r'\\192.168.1.100\Trubox\####ERP_RM####\Y2024\M09\D13\1. CAM\3. NC files\Isaac\4001.prg')
     infoWidget = InfoWidget(root)
-    infoWidget.addIssue(i)
-    infoWidget.addIssue(i2)
-    infoWidget.addIssue(i3)
-    infoWidget.addIssue(i4)
 
     btn_frame = tk.Frame(root, padx=5, pady=5)
     toggle = tk.Checkbutton(btn_frame, text="Auto Gather")
