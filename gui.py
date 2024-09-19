@@ -4,10 +4,12 @@ import time
 
 import gather_prg
 import info_widget
+import file_manager
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.fm = file_manager.FileManager()
 
         self.minsize(500, 300)
         self.geometry("500x300")
@@ -39,6 +41,9 @@ class App(tk.Tk):
         self.auto_gather_thread = threading.Thread(target=self.auto_gather, args=[gather_prg.REMOTE_PRG_PATH, self.stop_event, self.enabled_event])
         self.auto_gather_thread.start()
 
+        self.update_fm_thread = threading.Thread(target=self.update_fm, args=[self.stop_event])
+        self.update_fm_thread.start()
+
     def print_value(self):
         print(self.auto_check.get())
 
@@ -54,6 +59,7 @@ class App(tk.Tk):
 
     def on_close(self):
         self.stop_event.set()
+        self.fm.save()
         self.destroy()
 
     def auto_gather(self, path, disable_event:threading.Event, enabled_event:threading.Event):
@@ -64,6 +70,16 @@ class App(tk.Tk):
                 time.sleep(1)
             if(disable_event.is_set()):
                 return False
+    
+    def update_fm(self, disable_event:threading.Event):
+        while True:
+            self.fm.scan_folder()
+            for v in self.fm.file_hashmap.values():
+                self.info_widget_1.addFileDataIssues(v)
+
+            if disable_event.is_set():
+                return False
+
 
 def main():
   app = App()

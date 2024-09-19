@@ -27,7 +27,7 @@ class Issue:
 
     def __eq__(self, other):
         return (self.issue_type == other.issue_type)
-    
+
     def serialize_json(self):
         serialized_issue = {
             'issue_type':self.issue_type.value,
@@ -107,11 +107,11 @@ class FileData:
                 fileData.cut_off = float(contents[i+2][4:])
 
         if not contains_subprogram_0: 
-            fileData.add_issue(IssueType.SUBPROGRAM_0_ERR, f'Missing Subprogram: $0')
+            fileData.add_issue(IssueType.SUBPROGRAM_0_ERR, message='Missing Subprogram: $0')
         if not contains_subprogram_1:
-            fileData.add_issue(IssueType.SUBPROGRAM_1_ERR, f'Missing Subprogram: $1')
+            fileData.add_issue(IssueType.SUBPROGRAM_1_ERR, message='Missing Subprogram: $1')
         if not contains_subprogram_2:
-            fileData.add_issue(IssueType.SUBPROGRAM_2_ERR, f'Missing Subprogram: $2')
+            fileData.add_issue(IssueType.SUBPROGRAM_2_ERR, message='Missing Subprogram: $2')
         
         difference = round(math.fabs(fileData.part_length - fileData.cut_off), 4)
         if difference > 0.01:
@@ -162,25 +162,27 @@ class FileData:
 class FileManager:
     def __init__(self):  
         self.file_hashmap = {}
-        self.load()
+        if os.path.exists('./data.json'):
+            self.load()
     
     def scan_folder(self):
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 try:
                     for name in files:
-                        if not self.file_hashmap.get(name):
-                            data = FileData.from_path(os.path.join(root, name))
-                            self.file_hashmap[name] = data
-                            print(len(fm.file_hashmap.keys()))
-                        else:
-                            fd:FileData = self.file_hashmap[name]
-                            f_stat = os.stat(os.path.join(root, name))
+                        if prg_regex.match(name):
+                            if not self.file_hashmap.get(name):
+                                data = FileData.from_path(os.path.join(root, name))
+                                self.file_hashmap[name] = data
+                                print(len(fm.file_hashmap.keys()))
+                            else:
+                                fd:FileData = self.file_hashmap[name]
+                                f_stat = os.stat(os.path.join(root, name))
 
-                            if fd.location == root:
-                                if f_stat.st_mtime != fd.file_mtime:
-                                    new_data = FileData.from_path(os.path.join(root, name))
-                                    self.file_hashmap[name] = new_data
+                                if fd.location == root:
+                                    if f_stat.st_mtime != fd.file_mtime:
+                                        new_data = FileData.from_path(os.path.join(root, name))
+                                        self.file_hashmap[name] = new_data
                 except PermissionError:
                     print('Permission Denied')
 
@@ -217,8 +219,5 @@ class FileManager:
 
 if __name__ == "__main__":
     fm = FileManager()
-    try:
-        while True:
-            fm.scan_folder()
-    except KeyboardInterrupt:
-        fm.save()
+    fm.scan_folder()
+    fm.save()
