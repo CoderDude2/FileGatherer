@@ -111,10 +111,6 @@ class InfoWidget(tk.Frame):
                 self.issue_list.append(GUIError(file=fd.file_name, location=fd.location, issue_type=issue.issue_type))
         self.render()
 
-
-
-
-
 if __name__ == "__main__":
     fd = FileData()
 
