@@ -5,7 +5,9 @@ from file_manager import FileData, IssueType, Issue
 
 @dataclass
 class GUIError:
-    pass
+    file:str
+    location:str
+    issue_type:IssueType
 
 class InfoWidget(tk.Frame):
     def __init__(self, master=None):
@@ -13,7 +15,7 @@ class InfoWidget(tk.Frame):
 
         self.text = tk.Text(self, wrap='none', state='disabled', font="Arial 11")
         self.info_count = 0
-        self.issue_list:list[Issue] = []
+        self.issue_list:list[GUIError] = []
 
         self.text.tag_configure('spacer', font='Arial 3')
         self.text.tag_configure('spacer2', font='Arial 2')
@@ -39,7 +41,7 @@ class InfoWidget(tk.Frame):
         self.grid_rowconfigure(0, weight=1)
     
     def render(self):
-        new_text = tk.Text(self)
+        new_text = tk.Text(self,wrap='none', font="Arial 11", state='disabled')
 
         new_text.tag_configure('spacer', font='Arial 3')
         new_text.tag_configure('spacer2', font='Arial 2')
@@ -50,7 +52,10 @@ class InfoWidget(tk.Frame):
         new_text.tag_configure('issue_message', font="Arial 11 bold")
 
         self.ys.configure(command=new_text.yview)
+        new_text['yscrollcommand'] = self.ys.set
+
         self.xs.configure(command=new_text.xview)
+        new_text['xscrollcommand'] = self.xs.set
 
         new_text['state'] = 'normal'
         bg_tag = 'even'
@@ -63,23 +68,33 @@ class InfoWidget(tk.Frame):
             match i.issue_type:
                 case IssueType.SUBPROGRAM_0_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
-                    new_text.insert('end'," Error: Subprogram Missing\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
+                    new_text.insert('end'," Error: $0 Subprogram Missing\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' {i.file} \n')
+                    new_text.insert('end', f' {i.location} \n')
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.SUBPROGRAM_1_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
-                    new_text.insert('end'," Error: Subprogram Missing\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
+                    new_text.insert('end'," Error: $1 Subprogram Missing\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.SUBPROGRAM_2_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
-                    new_text.insert('end'," Error: Subprogram Missing\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
+                    new_text.insert('end'," Error: $2 Subprogram Missing\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' {i.file} \n')
+                    new_text.insert('end', f' {i.location} \n')
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.INVALID_NAME_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: Invalid Name\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end',' ' + i.message + '\n', ('error', bg_tag))
+                    new_text.insert('end', f' {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' {i.location} \n', ('error', bg_tag))
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                case IssueType.PART_LENGTH_ERR:
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                    new_text.insert('end'," Error: Part-Length does not equal Cut-off\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
             new_text.insert('end', '\n', ('spacer'))
         new_text['state'] = 'disabled'
@@ -89,10 +104,11 @@ class InfoWidget(tk.Frame):
         new_text.grid(column=0, row=0, sticky='nsew')
         self.grid(row=0, column=1, sticky='nsew')
     
-    def addErrors(self, fd:FileData):
+    def updateErrors(self, fd:FileData):
+        self.issue_list = []
         for issue in fd.issues:
             if issue not in self.issue_list:
-                self.issue_list.append(issue)
+                self.issue_list.append(GUIError(file=fd.file_name, location=fd.location, issue_type=issue.issue_type))
         self.render()
 
 
@@ -101,15 +117,18 @@ class InfoWidget(tk.Frame):
 
 if __name__ == "__main__":
     fd = FileData()
+
     def testFunc():
-        fd = FileData.from_path(r'/Users/isaacboots/Documents/GitHub/FileGatherer/nc/Ashley/5 (10) TL DS/1723.prg')
-        infoWidget.addErrors(fd)
+        fd = FileData.from_path(r'\\192.168.1.100\Trubox\####ERP_RM####\Y2024\M09\D13\1. CAM\3. NC files\Isaac\3 (12)\9999.prg')
+        infoWidget.updateErrors(fd)
+    
     root = tk.Tk()
     root.geometry("500x300")
     root.minsize(500, 300)
     f = tk.Frame(root)
 
     
+
     infoWidget = InfoWidget(root)
     
 
