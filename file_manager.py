@@ -11,7 +11,7 @@ prg_regex = re.compile(r'(\d{4,})([A-Za-z.]+)')
 asc_folder_regex = re.compile(r'\d+.\d+_ASC_\((\d+)\)')
 folder_regex = re.compile(r'(\d+) ?\((\d+)?\) ?([A-Za-z\+ ]+)?')
 
-IssueType = Enum('IssueType',[
+ErrorType = Enum('IssueType',[
     'SUBPROGRAM_0_ERR',
     'SUBPROGRAM_1_ERR',
     'SUBPROGRAM_2_ERR',
@@ -19,47 +19,18 @@ IssueType = Enum('IssueType',[
     'DUPLICATE_PRG_ERR',
     'PART_LENGTH_ERR',
     'MISSING_UG_VALUES_ERR'])
-    
-@dataclass
-class Issue:
-    issue_type:IssueType
-    message:str
-
-    def __eq__(self, other):
-        return (self.issue_type == other.issue_type)
-
-    def serialize_json(self):
-        serialized_issue = {
-            'issue_type':self.issue_type.value,
-            'message':self.message
-        }
-        return serialized_issue
-
-    @classmethod
-    def deserialize_json(cls, json_string):
-        issue_type = IssueType(json_string['issue_type'])
-        message = json_string['message']
-        return cls(issue_type, message)
 
 @dataclass
 class FileData:
     file_name:str = None
     location:str = None
-    file_inode:int = None
     file_mtime:float = None
-    case_type:str = None
-    issues:list[Issue] = field(default_factory=list)
-    part_length:float = 0
-    cut_off:float = 0
+    errors:list[ErrorType] = field(default_factory=list)
+
+    def add_error(self, error:ErrorType):
+        if error not in self.errors:
+            self.errors.append(error)
     
-    def has_issues(self) -> bool:
-        return len(self.issues) > 0
-
-    def add_issue(self, issue_type:IssueType, message:str):
-        i = Issue(issue_type, message)
-        if i not in self.issues:
-            self.issues.append(i)
-
     def full_path(self):
         return os.path.join(self.location, self.file_name)
 
@@ -67,24 +38,21 @@ class FileData:
     def from_path(cls, path):
         fileData = cls()
         fileData.file_name = os.path.basename(path).lower()
-
         fileData.location = os.path.dirname(path)
-        stat_result = os.stat(path)
-        fileData.file_inode = stat_result.st_ino
-        fileData.file_mtime = stat_result.st_mtime
+        fileData.file_mtime = os.stat(path).st_mtime
 
         with open(path, 'r') as file:
             first_line = file.readline()
             contents = file.readlines()
         
         if 'ASC' in first_line:
-            fileData.case_type = 'ASC'
+            case_type = 'ASC'
         elif 'T-L' in first_line or 'TLCS' in first_line or 'TLOC' in first_line:
-            fileData.case_type = "TLOC"
+            case_type = "TLOC"
         elif 'AOT14' in first_line:
-            fileData.case_type = "AOT"
+            case_type = "AOT"
         else:
-            fileData.case_type = "DS"
+            case_type = "DS"
 
         contains_subprogram_0 = False
         contains_subprogram_1 = False
@@ -101,27 +69,27 @@ class FileData:
                 contains_subprogram_2 = True
             
             if "(PartLength)" in line:
-                fileData.part_length = float(contents[i+1].split(' ')[1])
+                part_length = float(contents[i+1].split(' ')[1])
 
             if "T0100 (CUT-OFF)" in line:
-                fileData.cut_off = float(contents[i+2][4:])
+                cut_off = float(contents[i+2][4:])
 
         if not contains_subprogram_0: 
-            fileData.add_issue(IssueType.SUBPROGRAM_0_ERR, message='Missing Subprogram: $0')
+            fileData.add_error(ErrorType.SUBPROGRAM_0_ERR)
         if not contains_subprogram_1:
-            fileData.add_issue(IssueType.SUBPROGRAM_1_ERR, message='Missing Subprogram: $1')
+            fileData.add_error(ErrorType.SUBPROGRAM_1_ERR)
         if not contains_subprogram_2:
-            fileData.add_issue(IssueType.SUBPROGRAM_2_ERR, message='Missing Subprogram: $2')
+            fileData.add_error(ErrorType.SUBPROGRAM_2_ERR)
         
-        difference = round(math.fabs(fileData.part_length - fileData.cut_off), 4)
+        difference = round(math.fabs(part_length - cut_off), 4)
         if difference > 0.01:
-            fileData.add_issue(IssueType.PART_LENGTH_ERR, f'PART-LENGTH and CUT-OFF differ by {difference}')
+            fileData.add_error(ErrorType.PART_LENGTH_ERR)
 
         if not prg_regex.match(fileData.file_name):
-            fileData.add_issue(IssueType.INVALID_NAME_ERR, message=f'{fileData.file_name} name is invalid')
+            fileData.add_error(ErrorType.INVALID_NAME_ERR)
 
-        if fileData.file_name == "4001.prg" and fileData.case_type == "ASC":
-            fileData.add_issue(IssueType.INVALID_NAME_ERR, f'{fileData.file_name} name is invalid for ASC case.')
+        if fileData.file_name == "4001.prg" and case_type == "ASC":
+            fileData.add_error(ErrorType.INVALID_NAME_ERR)
 
         return fileData
 
@@ -129,12 +97,8 @@ class FileData:
         serialized_output = {
             'file_name':self.file_name,
             'location':self.location,
-            'file_inode':self.file_inode,
             'file_mtime':self.file_mtime,
-            'case_type':self.case_type,
-            'issues':[issue.serialize_json() for issue in self.issues],
-            'part_length':self.part_length,
-            'cut_off':self.cut_off
+            'errors':[e.value for e in self.errors],
         }
         return serialized_output
 
@@ -142,47 +106,75 @@ class FileData:
     def deserialize_json(cls, json_string):
         file_name = json_string['file_name']
         location = json_string['location']
-        file_inode = json_string['file_inode']
         file_mtime = json_string['file_mtime']
-        case_type = json_string['case_type']
-        issues = [Issue.deserialize_json(issue) for issue in json_string['issues']]
-        part_length = json_string['part_length']
-        cut_off = json_string['cut_off']
+        errors = [ErrorType(e) for e in json_string]
         return cls(
             file_name,
             location,
-            file_inode,
             file_mtime,
-            case_type,
-            issues,
-            part_length,
-            cut_off
+            errors
         )
 
 class FileManager:
     def __init__(self):  
         self.file_hashmap = {}
-        if os.path.exists('./data.json'):
-            self.load()
+
+    def run(self):
+        while True:
+            self.remove_missing_files()
     
+    def remove_missing_files(self): 
+        keys_to_remove = []
+        for key in self.file_hashmap.keys():
+            entries:list[FileData] = self.file_hashmap[key]
+            indices_to_remove = []
+            for i, entry in enumerate(entries):
+                if not os.path.exists(os.path.join(entry.location, entry.file_name)):
+                    indices_to_remove.append(i)
+            print(indices_to_remove)
+            for index in indices_to_remove:
+                self.file_hashmap[key].pop(index)
+            if(len(self.file_hashmap[key]) == 0):
+                keys_to_remove.append(key)
+        
+        print(keys_to_remove)
+        for key in keys_to_remove:
+            del(self.file_hashmap[key])
+        
+        print(self.file_hashmap)
+
     def scan_folder(self):
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 try:
                     for name in files:
-                        if prg_regex.match(name):
-                            if not self.file_hashmap.get(name):
-                                data = FileData.from_path(os.path.join(root, name))
-                                self.file_hashmap[name] = data
-                                print(len(fm.file_hashmap.keys()))
-                            else:
-                                fd:FileData = self.file_hashmap[name]
-                                f_stat = os.stat(os.path.join(root, name))
+                        file_entries = self.file_hashmap.get(name)
 
-                                if fd.location == root:
-                                    if f_stat.st_mtime != fd.file_mtime:
-                                        new_data = FileData.from_path(os.path.join(root, name))
-                                        self.file_hashmap[name] = new_data
+                        if file_entries:
+                            entries_to_remove = []
+                            for entry in file_entries:
+                                if entry.location == root:
+                                    print("Original", os.path.join(root, name))
+                                else:
+                                    print("Duplicate", os.path.join(root, name))
+                        else:
+                            data = FileData.from_path(os.path.join(root, name))
+                            self.file_hashmap[name] = [data]
+                            print(self.file_hashmap[name])
+
+                        # if prg_regex.match(name):
+                        #     if not self.file_hashmap.get(name):
+                        #         data = FileData.from_path(os.path.join(root, name))
+                        #         self.file_hashmap[name] = data
+                        #         print(len(fm.file_hashmap.keys()))
+                        #     else:
+                        #         fd:FileData = self.file_hashmap[name]
+                        #         f_stat = os.stat(os.path.join(root, name))
+
+                        #         if fd.location == root:
+                        #             if f_stat.st_mtime != fd.file_mtime:
+                        #                 new_data = FileData.from_path(os.path.join(root, name))
+                        #                 self.file_hashmap[name] = new_data
                 except PermissionError:
                     print('Permission Denied')
 
@@ -219,5 +211,5 @@ class FileManager:
 
 if __name__ == "__main__":
     fm = FileManager()
-    fm.scan_folder()
-    fm.save()
+    fm.remove_missing_files()
+    # fm.scan_folder()
