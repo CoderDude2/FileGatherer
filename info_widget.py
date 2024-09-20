@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
@@ -16,7 +17,7 @@ class InfoWidget(tk.Frame):
 
         self.text = tk.Text(self, wrap='none', state='disabled', font="Arial 11")
         self.info_count = 0
-        self.issue_list:list[GUIError] = []
+        self.issue_map = {}
 
         self.text.tag_configure('spacer', font='Arial 3')
         self.text.tag_configure('spacer2', font='Arial 2')
@@ -106,10 +107,16 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fd:FileData):
-        for issue in fd.issues:
-            if issue not in self.issue_list:
-                self.issue_list.append(GUIError(file=fd.file_name, location=fd.location, issue_type=issue.issue_type))
-        print(self.issue_list)
+        if fd.has_issues():
+            if self.issue_map.get(fd.file_name):
+                for i in fd.issues:
+                    if i not in self.issue_map[fd.file_name]:
+                        print(i)
+            else:
+                self.issue_map[fd.file_name] = [GUIError(fd.file_name, fd.location, i) for i in fd.issues]
+            print(self.issue_map)
+                
+        
 
 if __name__ == "__main__":
     fd = FileData()
@@ -124,13 +131,16 @@ if __name__ == "__main__":
     infoWidget = InfoWidget(root)
 
     def update():
-        while True:
-            fm.scan_folder()
-            for key in fm.file_hashmap:
-                infoWidget.updateErrors(fm.file_hashmap[key])
+        fm.scan_folder()
+        for key in fm.file_hashmap:
+            infoWidget.updateErrors(fm.file_hashmap[key])
 
-    update_thread = threading.Thread(target=update)
-    update_thread.start()
+    update()
+    time.sleep(5)
+    print()
+    update()
+    # update_thread = threading.Thread(target=update)
+    # update_thread.start()
 
     btn_frame = tk.Frame(root, padx=5, pady=5)
     toggle = tk.Checkbutton(btn_frame, text="Auto Gather")
