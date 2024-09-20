@@ -4,6 +4,8 @@ from enum import Enum
 import math
 import json
 from dataclasses import dataclass, field
+import time
+
 
 import gather_prg
 
@@ -137,65 +139,86 @@ class FileData:
             cut_off
         )
 
+def check_file(path) -> list[IssueType]:
+    issues:list[IssueType] = []
+
+    file_name = os.path.basename(path).lower()
+
+    with open(path, 'r') as file:
+        first_line = file.readline()
+        contents = file.readlines()
+
+    if 'ASC' in first_line:
+        case_type = 'ASC'
+    elif 'T-L' in first_line or 'TLCS' in first_line or 'TLOC' in first_line:
+        case_type = 'TLOC'
+    elif 'AOT14' in first_line:
+        case_type = 'AOT'
+    else:
+        case_type = 'DS'
+
+    contains_subprogram_0 = False
+    contains_subprogram_1 = False
+    contains_subprogram_2 = False
+
+    for i, line in enumerate(contents):
+        if '$0' in line:
+            contains_subprogram_0 = True
+        
+        if '$1' in line:
+            contains_subprogram_1 = True
+        
+        if '$2' in line:
+            contains_subprogram_2 = True
+        
+        if "(PartLength)" in line:
+            part_length = float(contents[i+1].split(' ')[1])
+
+        if "T0100 (CUT-OFF)" in line:
+            cut_off = float(contents[i+2][4:])
+
+    if not contains_subprogram_0: 
+        issues.append(IssueType.SUBPROGRAM_0_ERR)
+    if not contains_subprogram_1:
+        issues.append(IssueType.SUBPROGRAM_1_ERR)
+    if not contains_subprogram_2:
+        issues.append(IssueType.SUBPROGRAM_2_ERR)
+
+    difference = round(math.fabs(part_length - cut_off), 4)
+    if difference > 0.01:
+        issues.append(IssueType.PART_LENGTH_ERR)
+
+    if not prg_regex.match(file_name):
+        issues.append(IssueType.INVALID_NAME_ERR)
+
+    if file_name == "4001.prg" and case_type == "ASC":
+        issues.append(IssueType.INVALID_NAME_ERR)
+
+    return issues
+
 class FileManager:
-    def __init__(self):  
-        self.file_hashmap = {}
-        if os.path.exists('./data.json'):
-            self.load()
+    def __init__(self):
+        self.processed_files = {}
     
-    def scan_folder(self):
+    def process(self):
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
-                try:
-                    for name in files:
-                        if prg_regex.match(name):
-                            if not self.file_hashmap.get(name):
-                                data = FileData.from_path(os.path.join(root, name))
-                                self.file_hashmap[name] = data
-                                print(len(fm.file_hashmap.keys()))
-                            else:
-                                fd:FileData = self.file_hashmap[name]
-                                f_stat = os.stat(os.path.join(root, name))
+                for name in files:
+                    if name != ".DS_Store":
+                        f_stat = os.stat(os.path.join(root, name))
+                        if name not in self.processed_files.keys():
+                            self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                        else:
+                            if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
+                                self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                            elif self.processed_files[name]['location'] != root:
+                                print("Duplicate File:", os.path.join(root, name))
+    
+    def get_files_with_errors(self):
+        pass
 
-                                if fd.location == root:
-                                    if f_stat.st_mtime != fd.file_mtime:
-                                        new_data = FileData.from_path(os.path.join(root, name))
-                                        self.file_hashmap[name] = new_data
-                except PermissionError:
-                    print('Permission Denied')
-
-    def save(self):
-        keys_to_remove = []
-        for key,value in self.file_hashmap.items():
-            if not os.path.exists(os.path.join(value.location, value.file_name)):
-                keys_to_remove.append(key)
-        
-        for key in keys_to_remove:
-            del(self.file_hashmap[key])
-
-        serialized_output = {
-            'file_hashmap':{
-
-            }
-        }
-
-        for key in self.file_hashmap.keys():
-            serialized_output['file_hashmap'][key] = self.file_hashmap[key].serialize_json()
-        json_string = json.dumps(serialized_output, indent=' ')
-
-        with open('data.json', 'w+') as file:
-            file.write(json_string)
-
-    def load(self):
-        with open('data.json', 'r') as file:
-            content = file.read()
-        
-        loaded_json = json.loads(content)
-        self.file_hashmap = loaded_json['file_hashmap']
-        for i in self.file_hashmap.keys():
-            self.file_hashmap[i] = FileData.deserialize_json(self.file_hashmap[i])
 
 if __name__ == "__main__":
     fm = FileManager()
-    fm.scan_folder()
-    fm.save()
+    fm.process()
+    print(fm.processed_files)

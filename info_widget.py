@@ -17,7 +17,7 @@ class InfoWidget(tk.Frame):
 
         self.text = tk.Text(self, wrap='none', state='disabled', font="Arial 11")
         self.info_count = 0
-        self.issue_map = {}
+        self.issue_list:list[GUIError] = []
 
         self.text.tag_configure('spacer', font='Arial 3')
         self.text.tag_configure('spacer2', font='Arial 2')
@@ -71,8 +71,8 @@ class InfoWidget(tk.Frame):
                 case IssueType.SUBPROGRAM_0_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: $0 Subprogram Missing\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end', f' {i.file} \n')
-                    new_text.insert('end', f' {i.location} \n')
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.SUBPROGRAM_1_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
@@ -83,20 +83,26 @@ class InfoWidget(tk.Frame):
                 case IssueType.SUBPROGRAM_2_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: $2 Subprogram Missing\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end', f' {i.file} \n')
-                    new_text.insert('end', f' {i.location} \n')
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.INVALID_NAME_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: Invalid Name\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end', f' {i.file} \n', ('error', bg_tag))
-                    new_text.insert('end', f' {i.location} \n', ('error', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.PART_LENGTH_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: Part-Length does not equal Cut-off\n", ('error', 'issue_message', bg_tag))
-                    new_text.insert('end', f' {i.file} \n', ('error', bg_tag))
-                    new_text.insert('end', f' {i.location} \n', ('error', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                case IssueType.MISSING_UG_VALUES_ERR:
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                    new_text.insert('end'," Error: Missing one or more UG values\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
             new_text.insert('end', '\n', ('spacer'))
         new_text['state'] = 'disabled'
@@ -106,16 +112,12 @@ class InfoWidget(tk.Frame):
         new_text.grid(column=0, row=0, sticky='nsew')
         self.grid(row=0, column=1, sticky='nsew')
     
-    def updateErrors(self, fd:FileData):
-        if fd.has_issues():
-            if self.issue_map.get(fd.file_name):
-                for i in fd.issues:
-                    if i not in self.issue_map[fd.file_name]:
-                        print(i)
-            else:
-                self.issue_map[fd.file_name] = [GUIError(fd.file_name, fd.location, i) for i in fd.issues]
-            print(self.issue_map)
-                
+    def updateErrors(self, fm:FileManager):
+        for entry in fm.processed_files:
+            if len(fm.processed_files[entry]['errors']) > 0:
+                for error in fm.processed_files[entry]['errors']:
+                    self.issue_list.append(GUIError(entry, fm.processed_files[entry]['location'], error))
+        self.render()
         
 
 if __name__ == "__main__":
@@ -123,7 +125,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.geometry("500x300")
-    root.minsize(500, 300)
+    # root.minsize(500, 300)
     f = tk.Frame(root)
 
     fm = FileManager()
@@ -131,14 +133,12 @@ if __name__ == "__main__":
     infoWidget = InfoWidget(root)
 
     def update():
-        fm.scan_folder()
-        for key in fm.file_hashmap:
-            infoWidget.updateErrors(fm.file_hashmap[key])
+        fm.process()
+        infoWidget.updateErrors(fm)
 
     update()
-    time.sleep(5)
-    print()
-    update()
+    print(fm.processed_files)
+    print(infoWidget.issue_list)
     # update_thread = threading.Thread(target=update)
     # update_thread.start()
 
