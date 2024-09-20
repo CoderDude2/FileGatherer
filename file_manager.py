@@ -19,27 +19,6 @@ IssueType = Enum('IssueType',[
     'DUPLICATE_PRG_ERR',
     'PART_LENGTH_ERR',
     'MISSING_UG_VALUES_ERR'])
-    
-@dataclass
-class Issue:
-    issue_type:IssueType
-    message:str
-
-    def __eq__(self, other):
-        return (self.issue_type == other.issue_type)
-
-    def serialize_json(self):
-        serialized_issue = {
-            'issue_type':self.issue_type.value,
-            'message':self.message
-        }
-        return serialized_issue
-
-    @classmethod
-    def deserialize_json(cls, json_string):
-        issue_type = IssueType(json_string['issue_type'])
-        message = json_string['message']
-        return cls(issue_type, message)
 
 @dataclass
 class FileData:
@@ -48,17 +27,16 @@ class FileData:
     file_inode:int = None
     file_mtime:float = None
     case_type:str = None
-    issues:list[Issue] = field(default_factory=list)
+    issues:list[IssueType] = field(default_factory=list)
     part_length:float = 0
     cut_off:float = 0
     
     def has_issues(self) -> bool:
         return len(self.issues) > 0
 
-    def add_issue(self, issue_type:IssueType, message:str):
-        i = Issue(issue_type, message)
-        if i not in self.issues:
-            self.issues.append(i)
+    def add_issue(self, issue_type:IssueType):
+        if issue_type not in self.issues:
+            self.issues.append(issue_type)
 
     def full_path(self):
         return os.path.join(self.location, self.file_name)
@@ -107,21 +85,21 @@ class FileData:
                 fileData.cut_off = float(contents[i+2][4:])
 
         if not contains_subprogram_0: 
-            fileData.add_issue(IssueType.SUBPROGRAM_0_ERR, message='Missing Subprogram: $0')
+            fileData.add_issue(IssueType.SUBPROGRAM_0_ERR)
         if not contains_subprogram_1:
-            fileData.add_issue(IssueType.SUBPROGRAM_1_ERR, message='Missing Subprogram: $1')
+            fileData.add_issue(IssueType.SUBPROGRAM_1_ERR)
         if not contains_subprogram_2:
-            fileData.add_issue(IssueType.SUBPROGRAM_2_ERR, message='Missing Subprogram: $2')
+            fileData.add_issue(IssueType.SUBPROGRAM_2_ERR)
         
         difference = round(math.fabs(fileData.part_length - fileData.cut_off), 4)
         if difference > 0.01:
-            fileData.add_issue(IssueType.PART_LENGTH_ERR, f'PART-LENGTH and CUT-OFF differ by {difference}')
+            fileData.add_issue(IssueType.PART_LENGTH_ERR)
 
         if not prg_regex.match(fileData.file_name):
-            fileData.add_issue(IssueType.INVALID_NAME_ERR, message=f'{fileData.file_name} name is invalid')
+            fileData.add_issue(IssueType.INVALID_NAME_ERR)
 
         if fileData.file_name == "4001.prg" and fileData.case_type == "ASC":
-            fileData.add_issue(IssueType.INVALID_NAME_ERR, f'{fileData.file_name} name is invalid for ASC case.')
+            fileData.add_issue(IssueType.INVALID_NAME_ERR)
 
         return fileData
 
@@ -132,7 +110,7 @@ class FileData:
             'file_inode':self.file_inode,
             'file_mtime':self.file_mtime,
             'case_type':self.case_type,
-            'issues':[issue.serialize_json() for issue in self.issues],
+            'issues':[issue.value for issue in self.issues],
             'part_length':self.part_length,
             'cut_off':self.cut_off
         }
@@ -145,7 +123,7 @@ class FileData:
         file_inode = json_string['file_inode']
         file_mtime = json_string['file_mtime']
         case_type = json_string['case_type']
-        issues = [Issue.deserialize_json(issue) for issue in json_string['issues']]
+        issues = [IssueType(issue) for issue in json_string['issues']]
         part_length = json_string['part_length']
         cut_off = json_string['cut_off']
         return cls(

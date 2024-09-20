@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
-from file_manager import FileData, IssueType, Issue
+from file_manager import FileManager, FileData, IssueType
+import threading
 
 @dataclass
 class GUIError:
@@ -105,36 +106,37 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fd:FileData):
-        self.issue_list = []
         for issue in fd.issues:
             if issue not in self.issue_list:
                 self.issue_list.append(GUIError(file=fd.file_name, location=fd.location, issue_type=issue.issue_type))
-        self.render()
+        print(self.issue_list)
 
 if __name__ == "__main__":
     fd = FileData()
 
-    def testFunc():
-        fd = FileData.from_path(r'\\192.168.1.100\Trubox\####ERP_RM####\Y2024\M09\D13\1. CAM\3. NC files\Isaac\3 (12)\9999.prg')
-        infoWidget.updateErrors(fd)
-    
     root = tk.Tk()
     root.geometry("500x300")
     root.minsize(500, 300)
     f = tk.Frame(root)
 
-    
+    fm = FileManager()
 
     infoWidget = InfoWidget(root)
-    
+
+    def update():
+        while True:
+            fm.scan_folder()
+            for key in fm.file_hashmap:
+                infoWidget.updateErrors(fm.file_hashmap[key])
+
+    update_thread = threading.Thread(target=update)
+    update_thread.start()
 
     btn_frame = tk.Frame(root, padx=5, pady=5)
-    testbtn = tk.Button(btn_frame,command=testFunc)
     toggle = tk.Checkbutton(btn_frame, text="Auto Gather")
     btn = tk.Button(btn_frame, text="Gather ALL NC", padx=20, pady=20, width=10)
     btn2 = tk.Button(btn_frame, text="Gather ALL ASC", padx=20, pady=20, width=10)
 
-    testbtn.pack(side=tk.TOP)
     toggle.pack(side=tk.TOP)
     btn.pack(fill=tk.X, side=tk.TOP)
     btn2.pack(fill=tk.X, side=tk.TOP)
