@@ -208,6 +208,7 @@ class FileManager:
                         f_stat = os.stat(os.path.join(root, name))
                         if name not in self.processed_files.keys():
                             self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                            print(len(self.processed_files.keys()))
                         else:
                             if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}

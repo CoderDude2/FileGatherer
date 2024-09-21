@@ -11,6 +11,9 @@ class GUIError:
     location:str
     issue_type:IssueType
 
+    def __eq__(self, other):
+        return self.file == other.file and self.location == other.location and self.issue_type == other.issue_type
+
 class InfoWidget(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
@@ -113,34 +116,56 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fm:FileManager):
+        update_gui = False
+
+        indices_to_remove = []
+        for i, gui_error in enumerate(self.issue_list):
+            if gui_error.issue_type not in fm.processed_files.get(gui_error.file)['errors']:
+                indices_to_remove.append(i)
+                update_gui = True
+
+        for i in indices_to_remove:
+            del(indices_to_remove[i])
+
         for entry in fm.processed_files:
             if len(fm.processed_files[entry]['errors']) > 0:
                 for error in fm.processed_files[entry]['errors']:
-                    self.issue_list.append(GUIError(entry, fm.processed_files[entry]['location'], error))
-        self.render()
+                    gui_error = GUIError(entry, fm.processed_files[entry]['location'], error)
+                    if gui_error not in self.issue_list:
+                        self.issue_list.append(gui_error)
+                        update_gui = True
+        if update_gui:
+            self.render()
         
 
 if __name__ == "__main__":
-    fd = FileData()
 
     root = tk.Tk()
+
+    stop_event = threading.Event()
+    def on_close():
+        stop_event.set()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
     root.geometry("500x300")
     # root.minsize(500, 300)
     f = tk.Frame(root)
-
     fm = FileManager()
 
     infoWidget = InfoWidget(root)
 
-    def update():
-        fm.process()
-        infoWidget.updateErrors(fm)
+    def update(stop_event:threading.Event):
+        while True:
+            fm.process()
+            infoWidget.updateErrors(fm)
 
-    update()
-    print(fm.processed_files)
-    print(infoWidget.issue_list)
-    # update_thread = threading.Thread(target=update)
-    # update_thread.start()
+            if(stop_event.is_set()):
+                return False
+    
+    
+    update_thread = threading.Thread(target=update, args=[stop_event])
+    update_thread.start()
 
     btn_frame = tk.Frame(root, padx=5, pady=5)
     toggle = tk.Checkbutton(btn_frame, text="Auto Gather")
