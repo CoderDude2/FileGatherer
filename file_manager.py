@@ -144,6 +144,9 @@ def check_file(path) -> list[IssueType]:
 
     file_name = os.path.basename(path).lower()
 
+    part_length = 0
+    cut_off = 0
+
     with open(path, 'r') as file:
         first_line = file.readline()
         contents = file.readlines()
@@ -161,6 +164,12 @@ def check_file(path) -> list[IssueType]:
     contains_subprogram_1 = False
     contains_subprogram_2 = False
 
+    contains_ug_101 = False
+    contains_ug_102 = False
+    contains_ug_103 = False
+    contains_ug_104 = False
+    contains_ug_105 = False
+
     for i, line in enumerate(contents):
         if '$0' in line:
             contains_subprogram_0 = True
@@ -172,10 +181,26 @@ def check_file(path) -> list[IssueType]:
             contains_subprogram_2 = True
         
         if "(PartLength)" in line:
-            part_length = float(contents[i+1].split(' ')[1])
+            if "#100=" in contents[i+1]:
+                part_length = float(contents[i+1].split(' ')[1])
 
         if "T0100 (CUT-OFF)" in line:
             cut_off = float(contents[i+2][4:])
+        
+        if "#101=" in line:
+            contains_ug_101 = True
+        
+        if "#102=" in line:
+            contains_ug_102 = True
+        
+        if "#103=" in line:
+            contains_ug_103 = True
+        
+        if "#104=" in line:
+            contains_ug_104 = True
+        
+        if "#105=" in line:
+            contains_ug_105 = True
 
     if not contains_subprogram_0: 
         issues.append(IssueType.SUBPROGRAM_0_ERR)
@@ -194,13 +219,18 @@ def check_file(path) -> list[IssueType]:
     if file_name == "4001.prg" and case_type == "ASC":
         issues.append(IssueType.INVALID_NAME_ERR)
 
+    if case_type == "ASC" or case_type == "TLOC" or case_type == "AOT":
+        if not (contains_ug_101 and contains_ug_102 and contains_ug_103 and contains_ug_104 and contains_ug_105):
+            issues.append(IssueType.MISSING_UG_VALUES_ERR)
+
     return issues
 
 class FileManager:
     def __init__(self):
         self.processed_files = {}
     
-    def process(self):
+    def process(self) -> bool:
+        updated = False
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 for name in files:
@@ -209,11 +239,14 @@ class FileManager:
                         if name not in self.processed_files.keys():
                             self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
                             print(len(self.processed_files.keys()))
+                            updated = True
                         else:
                             if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
-                            elif self.processed_files[name]['location'] != root:
-                                print("Duplicate File:", os.path.join(root, name))
+                                updated = True
+                            # elif self.processed_files[name]['location'] != root:
+                                # print("Duplicate File:", os.path.join(root, name))
+        return updated
     
     def get_files_with_errors(self):
         pass

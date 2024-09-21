@@ -116,26 +116,21 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fm:FileManager):
-        update_gui = False
+        # update_gui = False
 
-        indices_to_remove = []
-        for i, gui_error in enumerate(self.issue_list):
-            if gui_error.issue_type not in fm.processed_files.get(gui_error.file)['errors']:
-                indices_to_remove.append(i)
-                update_gui = True
-
-        for i in indices_to_remove:
-            del(indices_to_remove[i])
-
+        # for i, gui_error in enumerate(self.issue_list):
+        #     if gui_error.issue_type not in fm.processed_files.get(gui_error.file)['errors']:
+        #         self.issue_list.clear()
+        #         update_gui = True
+        self.issue_list = []
         for entry in fm.processed_files:
             if len(fm.processed_files[entry]['errors']) > 0:
                 for error in fm.processed_files[entry]['errors']:
                     gui_error = GUIError(entry, fm.processed_files[entry]['location'], error)
                     if gui_error not in self.issue_list:
                         self.issue_list.append(gui_error)
-                        update_gui = True
-        if update_gui:
-            self.render()
+        # if update_gui:
+        self.render()
         
 
 if __name__ == "__main__":
@@ -157,8 +152,8 @@ if __name__ == "__main__":
 
     def update(stop_event:threading.Event):
         while True:
-            fm.process()
-            infoWidget.updateErrors(fm)
+            if fm.process():
+                infoWidget.updateErrors(fm)
 
             if(stop_event.is_set()):
                 return False
