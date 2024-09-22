@@ -108,10 +108,20 @@ def check_file(path) -> list[IssueType]:
 class FileManager:
     def __init__(self):
         self.processed_files = {}
-        self.duplicate_files = []
     
     def process(self) -> bool:
         updated = False
+
+        keys_to_remove = []
+        for key in self.processed_files:
+            entry = self.processed_files[name]
+            if not os.path.join(entry.location, key):
+                keys_to_remove.append(key)
+        
+        for key in keys_to_remove:
+            del(self.processed_files[key])
+            updated = True
+
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
             if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 for name in files:
@@ -126,7 +136,7 @@ class FileManager:
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
                                 updated = True
                             elif self.processed_files[name]['location'] != root:
-                                pass
+                                self.processed_files[name]['duplicates']
         return updated
     
     def get_files_with_errors(self):
