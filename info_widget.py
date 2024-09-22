@@ -2,7 +2,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
-from file_manager import FileManager, FileData, IssueType
+from file_manager import FileManager, IssueType
 import threading
 
 @dataclass
@@ -116,12 +116,7 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fm:FileManager):
-        # update_gui = False
-
-        # for i, gui_error in enumerate(self.issue_list):
-        #     if gui_error.issue_type not in fm.processed_files.get(gui_error.file)['errors']:
-        #         self.issue_list.clear()
-        #         update_gui = True
+        print(fm.duplicate_files)
         self.issue_list = []
         for entry in fm.processed_files:
             if len(fm.processed_files[entry]['errors']) > 0:
@@ -129,7 +124,6 @@ class InfoWidget(tk.Frame):
                     gui_error = GUIError(entry, fm.processed_files[entry]['location'], error)
                     if gui_error not in self.issue_list:
                         self.issue_list.append(gui_error)
-        # if update_gui:
         self.render()
         
 
