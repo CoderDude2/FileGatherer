@@ -114,12 +114,13 @@ class FileManager:
 
         keys_to_remove = []
         for key in self.processed_files:
-            entry = self.processed_files[name]
-            if not os.path.join(entry.location, key):
+            entry = self.processed_files[key]
+            if not os.path.exists(os.path.join(entry['location'], key)):
                 keys_to_remove.append(key)
         
         for key in keys_to_remove:
             del(self.processed_files[key])
+            print(key, "Deleted")
             updated = True
 
         for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
@@ -136,7 +137,8 @@ class FileManager:
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
                                 updated = True
                             elif self.processed_files[name]['location'] != root:
-                                self.processed_files[name]['duplicates']
+                                pass
+                                # self.processed_files[name]['duplicates']
         return updated
     
     def get_files_with_errors(self):

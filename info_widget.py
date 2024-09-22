@@ -116,7 +116,6 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fm:FileManager):
-        print(fm.duplicate_files)
         self.issue_list = []
         for entry in fm.processed_files:
             if len(fm.processed_files[entry]['errors']) > 0:
