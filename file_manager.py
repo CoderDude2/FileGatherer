@@ -129,16 +129,18 @@ class FileManager:
                     if '.prg' in name.lower():
                         f_stat = os.stat(os.path.join(root, name))
                         if name not in self.processed_files.keys():
-                            self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
-                            print(len(self.processed_files.keys()))
+                            self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
                             updated = True
                         else:
                             if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
-                                self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                                self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':self.processed_files[name]['duplicates']}
                                 updated = True
                             elif self.processed_files[name]['location'] != root:
-                                pass
-                                # self.processed_files[name]['duplicates']
+                                duplicate_file = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                                duplicate_file['errors'].append(IssueType.DUPLICATE_PRG_ERR)
+                                if duplicate_file not in self.processed_files[name]['duplicates']:
+                                    self.processed_files[name]['duplicates'].append(duplicate_file)
+                                    updated = True
         return updated
     
     def get_files_with_errors(self):

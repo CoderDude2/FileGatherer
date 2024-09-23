@@ -18,7 +18,10 @@ class InfoWidget(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
 
-        self.text = tk.Text(self, wrap='none', state='disabled', font="Arial 11")
+        self.text = tk.Text(self, wrap='none', state='normal', font="Arial 11")
+
+        self.text.insert('end', "Processing...")
+
         self.info_count = 0
         self.issue_list:list[GUIError] = []
 
@@ -107,6 +110,12 @@ class InfoWidget(tk.Frame):
                     new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
                     new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
+                case IssueType.DUPLICATE_PRG_ERR:
+                    new_text.insert('end', '\n', ('warning', 'spacer2'))
+                    new_text.insert('end'," Warning: Duplicate PRG\n", ('warning', 'issue_message', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('warning', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('warning', bg_tag))
+                    new_text.insert('end', '\n', ('warning', 'spacer2'))
             new_text.insert('end', '\n', ('spacer'))
         new_text['state'] = 'disabled'
 
@@ -116,6 +125,7 @@ class InfoWidget(tk.Frame):
         self.grid(row=0, column=1, sticky='nsew')
     
     def updateErrors(self, fm:FileManager):
+        print()
         self.issue_list = []
         for entry in fm.processed_files:
             if len(fm.processed_files[entry]['errors']) > 0:
@@ -123,6 +133,12 @@ class InfoWidget(tk.Frame):
                     gui_error = GUIError(entry, fm.processed_files[entry]['location'], error)
                     if gui_error not in self.issue_list:
                         self.issue_list.append(gui_error)
+            if len(fm.processed_files[entry]['duplicates']) > 0:
+                for duplicate in fm.processed_files[entry]['duplicates']:
+                    for error in duplicate['errors']:
+                        gui_error = GUIError(entry, duplicate['location'], error)
+                        if gui_error not in self.issue_list:
+                            self.issue_list.append(gui_error)
         self.render()
         
 
