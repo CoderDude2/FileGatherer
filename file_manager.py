@@ -1,14 +1,25 @@
+import datetime
 import json
+import math
 import os
 import re
 from enum import Enum
-import math
 
 import gather_prg
 
 prg_regex = re.compile(r'(\d{4,})([A-Za-z.]+)')
 asc_folder_regex = re.compile(r'\d+.\d+_ASC_\((\d+)\)')
 folder_regex = re.compile(r'(\d+) ?\((\d+)?\) ?([A-Za-z\+ ]+)?')
+
+def date_as_path(date=None):
+    if(date == None):
+        date = datetime.datetime.now().date()
+    _day = f'D{"0"+str(date.day) if date.day < 10 else str(date.day)}'
+    _month = f'M{"0"+str(date.month) if date.month < 10 else str(date.month)}'
+    _year = f'Y{str(date.year)}'
+    return os.path.join(_year, _month, _day)
+
+REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
 
 IssueType = Enum('IssueType',[
     'SUBPROGRAM_0_ERR',
@@ -133,7 +144,6 @@ class FileManager:
                             if name not in self.processed_files.keys():
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
                                 updated = True
-                                print(len(self.processed_files.keys()))
                             else:
                                 existing_duplicates = []
                                 for duplicate in self.processed_files[name]['duplicates']:
@@ -156,6 +166,13 @@ class FileManager:
                         except FileNotFoundError:
                             print("Could not find the file", name)
         return updated
+    
+    def gather_valid_files(self, filter:str, dst:str):
+        for key, value in self.processed_files.items():
+            with open(os.path.join(value['location'], key)) as file:
+                line = file.readline()
+                if len(value['errors']) == 0:
+                    print(line, "is valid")
     
     def save(self):
         serialized_processed_files = {}
@@ -204,8 +221,9 @@ class FileManager:
 if __name__ == "__main__":
     fm = FileManager()
     fm.load()
-    for key, value in fm.processed_files.items():
-        print(key, value)
-    fm.process()
-    fm.save()
+    fm.gather_valid_files('ASC', '.')
+    # for key, value in fm.processed_files.items():
+    #     print(key, value)
+    # fm.process()
+    # fm.save()
     
