@@ -178,10 +178,34 @@ class FileManager:
             file.write(json.dumps(serialized_processed_files, indent=2))
 
     def load(self):
-        pass
+        if os.path.exists('data.json'):
+            with open('data.json', 'r') as file:
+                contents = file.read()
+            json_data = json.loads(contents)
 
+            for key, entry in json_data.items():
+                deserialized_location = entry['location']
+                deserialized_mtime = entry['mtime']
+                deserialized_errors = [IssueType(i) for i in entry['errors']]
+                deserialized_duplicates = []
+
+                for duplicate in entry['duplicates']:
+                    deserialized_duplicate_location = duplicate['location']
+                    deserialized_duplicate_mtime = duplicate['mtime']
+                    deserialized_duplicate_errors = [IssueType(i) for i in duplicate['errors']]
+                    deserialized_duplicate = {'location':deserialized_duplicate_location, 'mtime':deserialized_duplicate_mtime, 'errors':deserialized_duplicate_errors}
+                    deserialized_duplicates.append(deserialized_duplicate)
+                
+                deserialized_entry = {'location':deserialized_location, 'mtime':deserialized_mtime, 'errors':deserialized_errors, 'duplicates':deserialized_duplicates}
+                self.processed_files[key] = deserialized_entry
+        else:
+            self.processed_files = {}
 
 if __name__ == "__main__":
     fm = FileManager()
+    fm.load()
+    for key, value in fm.processed_files.items():
+        print(key, value)
     fm.process()
     fm.save()
+    
