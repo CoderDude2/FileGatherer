@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from enum import Enum
@@ -156,11 +157,31 @@ class FileManager:
                             print("Could not find the file", name)
         return updated
     
-    def get_files_with_errors(self):
+    def save(self):
+        serialized_processed_files = {}
+
+        for key, entry in self.processed_files.items():
+            location = entry['location']
+            mtime = entry['mtime']
+            errors = [error.value for error in entry['errors']]
+            serialized_duplicates = []
+            
+            for duplicate in entry['duplicates']:
+                duplicate_location = duplicate['location']
+                duplicate_mtime = duplicate['mtime']
+                duplicate_errors = [error.value for error in duplicate['errors']]
+                serialized_duplicate = {'location':duplicate_location, 'mtime':duplicate_mtime, 'errors':duplicate_errors}
+                serialized_duplicates.append(serialized_duplicate)
+
+            serialized_processed_files[key] = {'location':location, 'mtime':mtime, 'errors':errors, 'duplicates':serialized_duplicates}
+        with open('data.json', 'w+') as file:
+            file.write(json.dumps(serialized_processed_files, indent=2))
+
+    def load(self):
         pass
 
 
 if __name__ == "__main__":
     fm = FileManager()
     fm.process()
-    print(fm.processed_files)
+    fm.save()
