@@ -145,10 +145,12 @@ class FileManager:
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
                                 updated = True
                             else:
+                                # Remove any duplicates that no longer exist
                                 existing_duplicates = []
                                 for duplicate in self.processed_files[name]['duplicates']:
-                                    if os.path.exists(os.path.join(duplicate['location'], name)):
+                                    if os.path.exists(os.path.join(duplicate['location'], name)) and duplicate['location'] != self.processed_files[name]['location']:
                                         existing_duplicates.append(duplicate)
+                                
                                 if len(existing_duplicates) != len(self.processed_files[name]['duplicates']):
                                     self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':existing_duplicates}
                                     updated = True
