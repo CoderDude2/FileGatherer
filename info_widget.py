@@ -148,6 +148,7 @@ if __name__ == "__main__":
     stop_event = threading.Event()
     def on_close():
         stop_event.set()
+        fm.save()
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
@@ -155,8 +156,10 @@ if __name__ == "__main__":
     # root.minsize(500, 300)
     f = tk.Frame(root)
     fm = FileManager()
+    fm.load()
 
     infoWidget = InfoWidget(root)
+    infoWidget.updateErrors(fm)
 
     def update(stop_event:threading.Event):
         while True:
