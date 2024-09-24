@@ -13,9 +13,10 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
-# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\Y2024\M09\D13\1. CAM\3. NC files\Isaac\4 (12)'
-REMOTE_PRG_PATH=r"./nc"
+REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = r'\\192.168.1.100\Trubox\####ERP_RM####\Y2024\M09\D23\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = '\\\\192.168.1.100\\Trubox\\####ERP_RM####\\Y2024\\M09\\D13\\1. CAM\\3. NC files\Isaac'
+# REMOTE_PRG_PATH=r"./nc"
 
 @dataclass
 class Entry:

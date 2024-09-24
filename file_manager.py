@@ -123,24 +123,37 @@ class FileManager:
             print(key, "Deleted")
             updated = True
 
-        for root, _, files in os.walk(gather_prg.REMOTE_PRG_PATH):
-            if len(files) > 0 and "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
+        for root, dirs, files in os.walk(gather_prg.REMOTE_PRG_PATH):
+            if "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 for name in files:
                     if '.prg' in name.lower():
-                        f_stat = os.stat(os.path.join(root, name))
-                        if name not in self.processed_files.keys():
-                            self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
-                            updated = True
-                        else:
-                            if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
-                                self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':self.processed_files[name]['duplicates']}
+                        try:
+                            f_stat = os.stat(os.path.join(root, name))
+                            if name not in self.processed_files.keys():
+                                self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
                                 updated = True
-                            elif self.processed_files[name]['location'] != root:
-                                duplicate_file = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
-                                duplicate_file['errors'].append(IssueType.DUPLICATE_PRG_ERR)
-                                if duplicate_file not in self.processed_files[name]['duplicates']:
-                                    self.processed_files[name]['duplicates'].append(duplicate_file)
+                                print(len(self.processed_files.keys()))
+                            else:
+                                existing_duplicates = []
+                                for duplicate in self.processed_files[name]['duplicates']:
+                                    if os.path.exists(os.path.join(duplicate['location'], name)):
+                                        existing_duplicates.append(duplicate)
+                                if len(existing_duplicates) != len(self.processed_files[name]['duplicates']):
+                                    self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':existing_duplicates}
                                     updated = True
+                                if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
+                                    self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':self.processed_files[name]['duplicates']}
+                                    updated = True
+                                elif self.processed_files[name]['location'] != root:
+                                    duplicate_file = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
+                                    duplicate_file['errors'].append(IssueType.DUPLICATE_PRG_ERR)
+                                    if duplicate_file not in self.processed_files[name]['duplicates']:
+                                        self.processed_files[name]['duplicates'].append(duplicate_file)
+                                        updated = True
+                        except PermissionError:
+                            print(f"File: {name}, is open in another process.")
+                        except FileNotFoundError:
+                            print("Could not find the file", name)
         return updated
     
     def get_files_with_errors(self):
