@@ -99,11 +99,13 @@ class InfoWidget(tk.Frame):
                     new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.PART_LENGTH_ERR:
+                    print(new_text.index('end - 1l'))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: Part-Length does not equal Cut-off\n", ('error', 'issue_message', bg_tag))
                     new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
                     new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
+                    print(new_text.index('end - 1l'))
                 case IssueType.MISSING_UG_VALUES_ERR:
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     new_text.insert('end'," Error: Missing one or more UG values\n", ('error', 'issue_message', bg_tag))
@@ -111,12 +113,14 @@ class InfoWidget(tk.Frame):
                     new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                 case IssueType.DUPLICATE_PRG_ERR:
+                    print(new_text.index('end - 1l'))
                     new_text.insert('end', '\n', ('warning', 'spacer2'))
                     new_text.insert('end'," Warning: Duplicate PRG\n", ('warning', 'issue_message', bg_tag))
                     new_text.insert('end', f' File: {i.file} \n', ('warning', bg_tag))
                     new_text.insert('end', f' Location: {i.location} \n', ('warning', bg_tag))
                     new_text.insert('end', '\n', ('warning', 'spacer2'))
-            new_text.insert('end', '\n', ('spacer'))
+                    print(new_text.index('end - 1l'))
+            # new_text.insert('end', '\n', ('spacer'))
         new_text['state'] = 'disabled'
 
         self.text.destroy()
