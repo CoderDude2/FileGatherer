@@ -27,11 +27,11 @@ class InfoWidget(tk.Frame):
 
         self.text.tag_configure('spacer', font='Arial 3')
         self.text.tag_configure('spacer2', font='Arial 2')
-        self.text.tag_configure('even', background="#EEEEEE", foreground="black")
-        self.text.tag_configure('odd', background="#DDDDDD", foreground="black")
-        self.text.tag_configure('error', background='#F7B0B0')
-        self.text.tag_configure('warning', background='#F7CCB0')
-        self.text.tag_configure('issue_message', font="Arial 11 bold")
+        self.text.tag_configure('even', background="#EEEEEE", foreground="black", selectforeground="white", selectbackground="blue")
+        self.text.tag_configure('odd', background="#DDDDDD", foreground="black", selectforeground="white", selectbackground="blue")
+        self.text.tag_configure('error', background='#F7B0B0', selectforeground="white", selectbackground="blue")
+        self.text.tag_configure('warning', background='#F7CCB0', selectforeground="white", selectbackground="blue")
+        self.text.tag_configure('issue_message', font="Arial 11 bold", selectforeground="white", selectbackground="blue")
         
         self.text['state'] = 'disabled'
 
@@ -47,17 +47,17 @@ class InfoWidget(tk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-    
+
     def render(self):
         new_text = tk.Text(self,wrap='none', font="Arial 11", state='disabled')
 
         new_text.tag_configure('spacer', font='Arial 3')
         new_text.tag_configure('spacer2', font='Arial 2')
-        new_text.tag_configure('even', background="#EEEEEE", foreground="black")
-        new_text.tag_configure('odd', background="#DDDDDD", foreground="black")
-        new_text.tag_configure('error', background='#F7B0B0')
-        new_text.tag_configure('warning', background='#F7CCB0')
-        new_text.tag_configure('issue_message', font="Arial 11 bold")
+        new_text.tag_configure('even', background="#EEEEEE", foreground="black", selectforeground="white", selectbackground="blue")
+        new_text.tag_configure('odd', background="#DDDDDD", foreground="black", selectforeground="white", selectbackground="blue")
+        new_text.tag_configure('error', background='#F7B0B0', selectforeground="white", selectbackground="blue")
+        new_text.tag_configure('warning', background='#F7CCB0', selectforeground="white", selectbackground="blue")
+        new_text.tag_configure('issue_message', font="Arial 11 bold", selectforeground="white", selectbackground="blue")
 
         self.ys.configure(command=new_text.yview)
         new_text['yscrollcommand'] = self.ys.set
