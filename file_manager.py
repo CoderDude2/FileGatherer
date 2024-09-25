@@ -19,7 +19,14 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+REMOTE_PRG_PATH = r'C:\Users\TruUser\Documents\gather\gather\test'
+
+def xcopy(src:str, dst:str) -> None:
+    if os.name == 'nt':
+        os.system(f'echo F |xcopy /Y "{src}" "{dst}"')
+    elif os.name == 'posix':
+        os.system(f'cp "{src}" "{dst}"')
 
 IssueType = Enum('IssueType',[
     'SUBPROGRAM_0_ERR',
@@ -120,7 +127,16 @@ def check_file(path) -> list[IssueType]:
 class FileManager:
     def __init__(self):
         self.processed_files = {}
-    
+        self.copy_files = False
+        self.copy_asc_files = False
+
+        if self.copy_files:
+            if not os.path.exists(os.path.join(REMOTE_PRG_PATH, 'ALL')):
+                os.mkdir(os.path.join(REMOTE_PRG_PATH, 'ALL'))
+
+        if self.copy_asc_files:
+            pass
+
     def process(self) -> bool:
         updated = False
 
@@ -143,6 +159,8 @@ class FileManager:
                             f_stat = os.stat(os.path.join(root, name))
                             if name not in self.processed_files.keys():
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
+                                if self.copy_files and len(self.processed_files[name]['errors']) == 0:
+                                    xcopy(os.path.join(root, name), os.path.join(REMOTE_PRG_PATH, 'ALL', name))
                                 updated = True
                             else:
                                 # Remove any duplicates that no longer exist
@@ -156,6 +174,10 @@ class FileManager:
                                     updated = True
                                 if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
                                     self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':self.processed_files[name]['duplicates']}
+                                    
+                                    if self.copy_files and len(self.processed_files[name]['errors']) == 0:
+                                        xcopy(os.path.join(root, name), os.path.join(REMOTE_PRG_PATH, 'ALL', name))
+                                    
                                     updated = True
                                 elif self.processed_files[name]['location'] != root:
                                     duplicate_file = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
@@ -168,13 +190,6 @@ class FileManager:
                         except FileNotFoundError:
                             print("Could not find the file", name)
         return updated
-    
-    def gather_valid_files(self, filter:str, dst:str):
-        for key, value in self.processed_files.items():
-            with open(os.path.join(value['location'], key)) as file:
-                line = file.readline()
-                if len(value['errors']) == 0:
-                    print(line, "is valid")
     
     def save(self):
         serialized_processed_files = {}

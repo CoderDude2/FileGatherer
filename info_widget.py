@@ -192,6 +192,7 @@ if __name__ == "__main__":
     # root.minsize(500, 300)
     f = tk.Frame(root)
     fm = FileManager()
+    fm.copy_files = True
     fm.load()
 
     infoWidget = InfoWidget(root)
