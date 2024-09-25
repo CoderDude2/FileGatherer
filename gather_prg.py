@@ -14,7 +14,6 @@ def date_as_path(date=None):
     return os.path.join(_year, _month, _day)
 
 REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
-# REMOTE_PRG_PATH=r"./nc"
 
 @dataclass
 class Entry:
