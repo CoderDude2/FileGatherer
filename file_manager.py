@@ -5,10 +5,8 @@ import os
 import re
 from enum import Enum
 
-import gather_prg
-
 prg_regex = re.compile(r'(\d{4,})([A-Za-z.]+)')
-asc_folder_regex = re.compile(r'\d+.\d+_ASC_\((\d+)\)')
+asc_folder_regex = re.compile(r"\d+.\d+_ASC_\((\d+)\)")
 folder_regex = re.compile(r'(\d+) ?\((\d+)?\) ?([A-Za-z\+ ]+)?')
 
 def date_as_path(date=None):
@@ -19,8 +17,8 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
-REMOTE_PRG_PATH = r'C:\Users\TruUser\Documents\gather\gather\test'
+REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = r'C:\Users\TruUser\Documents\gather\gather\test'
 
 def xcopy(src:str, dst:str) -> None:
     if os.name == 'nt':
@@ -82,6 +80,7 @@ def check_file(path) -> list[IssueType]:
             if "#100=" in contents[i+1]:
                 if contents[i+1].split('=')[1].strip() != '':
                     part_length = float(contents[i+1].split('=')[1].strip())
+                    
 
         if "T0100 (CUT-OFF)" in line:
             cut_off = float(contents[i+2][4:])
@@ -108,9 +107,9 @@ def check_file(path) -> list[IssueType]:
     if not contains_subprogram_2:
         issues.append(IssueType.SUBPROGRAM_2_ERR)
 
-    difference = round(math.fabs(part_length - cut_off), 4)
-    if difference > 0.01:
+    if round(math.fabs(part_length - cut_off), 4) > 0.01:
         issues.append(IssueType.PART_LENGTH_ERR)
+        print(file_name, part_length, cut_off, path)
 
     if not prg_regex.match(file_name):
         issues.append(IssueType.INVALID_NAME_ERR)
@@ -124,18 +123,77 @@ def check_file(path) -> list[IssueType]:
 
     return issues
 
+def asc_folder_exists(dir_path) -> bool:
+    for entry in os.listdir(dir_path):
+        if asc_folder_regex.match(entry) and os.path.isdir(os.path.join(dir_path, entry)):
+            return True
+    return False
+
+def create_asc_folder(dir_path):
+    if not asc_folder_exists(dir_path):
+        todays_date = datetime.datetime.now()
+        os.mkdir(os.path.join(dir_path, f'{todays_date.month}.{todays_date.day}_ASC_(0)'))
+
+def get_asc_folder(dir_path):
+    for entry in os.listdir(dir_path):
+        if asc_folder_regex.match(entry) and os.path.isdir(os.path.join(dir_path, entry)):
+            return entry
+
+def update_asc_folder(dir_path):
+    todays_date = datetime.datetime.now()
+    asc_folder = get_asc_folder(dir_path)
+    if asc_folder:
+        new_asc_folder = f'{todays_date.month}.{todays_date.day}_ASC_({len(os.listdir(os.path.join(dir_path, asc_folder)))})'
+        
+        try:
+            os.rename(os.path.join(dir_path, asc_folder), os.path.join(dir_path, new_asc_folder))
+        except OSError:
+            print("Folder not found:", dir_path)
+
+def copy_to_asc(file_path):
+    asc_folder = os.path.join(REMOTE_PRG_PATH, get_asc_folder(REMOTE_PRG_PATH))
+
+    file_name = os.path.basename(file_path)
+    file_mtime = os.stat(file_path).st_mtime
+
+    if file_name not in os.listdir(asc_folder):
+        xcopy(file_path, os.path.join(asc_folder, file_name))
+    elif file_name in os.listdir(asc_folder):
+        all_file_mtime = os.stat(os.path.join(asc_folder, file_name)).st_mtime
+
+        if file_mtime != all_file_mtime:
+            xcopy(file_path, os.path.join(asc_folder, file_name))
+
+def copy_to_all(file_path):
+    all_folder = os.path.join(REMOTE_PRG_PATH, "ALL")
+
+    file_name = os.path.basename(file_path)
+    file_mtime = os.stat(file_path).st_mtime
+
+    if file_name not in os.listdir(all_folder):
+        xcopy(file_path, os.path.join(REMOTE_PRG_PATH, "ALL", file_name))
+    elif file_name in os.listdir(all_folder):
+        all_file_mtime = os.stat(os.path.join(all_folder, file_name)).st_mtime
+
+        if file_mtime != all_file_mtime:
+            xcopy(file_path, os.path.join(all_folder, file_name))
+        
+
+def is_asc_file(file_path) -> bool:
+    try:
+        with open(file_path, 'r') as file:
+            firstline = file.readline()
+        if "ASC" in firstline:
+            return True
+        return False
+    except (FileNotFoundError, UnicodeDecodeError, PermissionError, OSError) as e:
+        print(e)
+        return False
+
 class FileManager:
     def __init__(self):
         self.processed_files = {}
         self.copy_files = False
-        self.copy_asc_files = False
-
-        if self.copy_files:
-            if not os.path.exists(os.path.join(REMOTE_PRG_PATH, 'ALL')):
-                os.mkdir(os.path.join(REMOTE_PRG_PATH, 'ALL'))
-
-        if self.copy_asc_files:
-            pass
 
     def process(self) -> bool:
         updated = False
@@ -151,7 +209,7 @@ class FileManager:
             print(key, "Deleted")
             updated = True
 
-        for root, dirs, files in os.walk(gather_prg.REMOTE_PRG_PATH):
+        for root, dirs, files in os.walk(REMOTE_PRG_PATH):
             if "ALL" not in os.path.basename(root) and not asc_folder_regex.match(os.path.basename(root)):
                 for name in files:
                     if '.prg' in name.lower():
@@ -159,8 +217,6 @@ class FileManager:
                             f_stat = os.stat(os.path.join(root, name))
                             if name not in self.processed_files.keys():
                                 self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':[]}
-                                if self.copy_files and len(self.processed_files[name]['errors']) == 0:
-                                    xcopy(os.path.join(root, name), os.path.join(REMOTE_PRG_PATH, 'ALL', name))
                                 updated = True
                             else:
                                 # Remove any duplicates that no longer exist
@@ -174,10 +230,6 @@ class FileManager:
                                     updated = True
                                 if self.processed_files[name]['mtime'] != f_stat.st_mtime and self.processed_files[name]['location'] == root:
                                     self.processed_files[name] = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name)), 'duplicates':self.processed_files[name]['duplicates']}
-                                    
-                                    if self.copy_files and len(self.processed_files[name]['errors']) == 0:
-                                        xcopy(os.path.join(root, name), os.path.join(REMOTE_PRG_PATH, 'ALL', name))
-                                    
                                     updated = True
                                 elif self.processed_files[name]['location'] != root:
                                     duplicate_file = {'location':root, 'mtime':f_stat.st_mtime, 'errors':check_file(os.path.join(root, name))}
@@ -191,7 +243,30 @@ class FileManager:
                             print("Could not find the file", name)
         return updated
     
-    def save(self):
+    def copy_all_valid_files(self):
+        if self.copy_files:
+            if not os.path.exists(os.path.join(REMOTE_PRG_PATH, 'ALL')):
+                os.mkdir(os.path.join(REMOTE_PRG_PATH, 'ALL'))
+
+        if self.copy_asc_files:
+            if not asc_folder_exists(REMOTE_PRG_PATH):
+                create_asc_folder(REMOTE_PRG_PATH)
+        
+        for name, data in self.processed_files.items():
+            file_path = os.path.join(data['location'], name)
+            if len(data['errors']) == 0:
+                copy_to_all(file_path)
+
+    def copy_asc_files(self):
+        if not asc_folder_exists(REMOTE_PRG_PATH):
+                create_asc_folder(REMOTE_PRG_PATH)
+        for name, data in self.processed_files.items():
+            file_path = os.path.join(data['location'], name)
+            if len(data['errors']) == 0 and is_asc_file(file_path):
+                copy_to_asc(file_path)
+        update_asc_folder(REMOTE_PRG_PATH)
+
+    def save(self, json_file_path):
         serialized_processed_files = {}
 
         for key, entry in self.processed_files.items():
@@ -208,12 +283,12 @@ class FileManager:
                 serialized_duplicates.append(serialized_duplicate)
 
             serialized_processed_files[key] = {'location':location, 'mtime':mtime, 'errors':errors, 'duplicates':serialized_duplicates}
-        with open('data.json', 'w+') as file:
+        with open(json_file_path, 'w+') as file:
             file.write(json.dumps(serialized_processed_files, indent=2))
 
-    def load(self):
-        if os.path.exists('data.json'):
-            with open('data.json', 'r') as file:
+    def load(self, json_file_path):
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r') as file:
                 contents = file.read()
             json_data = json.loads(contents)
 
@@ -237,8 +312,13 @@ class FileManager:
 
 if __name__ == "__main__":
     fm = FileManager()
-    fm.load()
-    fm.gather_valid_files('ASC', '.')
+    fm.copy_files = True
+    fm.copy_asc_files = False
+    while True:
+        try:
+            fm.process()
+        except KeyboardInterrupt:
+            break
     # for key, value in fm.processed_files.items():
     #     print(key, value)
     # fm.process()

@@ -2,7 +2,6 @@ import tkinter as tk
 import threading
 import time
 
-import gather_prg
 import info_widget
 import file_manager
 
@@ -10,7 +9,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.fm = file_manager.FileManager()
-        self.fm.load()
+        self.fm.load("test.json")
+        self.fm.process()
 
         self.minsize(500, 300)
         self.geometry("500x300")
@@ -22,8 +22,8 @@ class App(tk.Tk):
 
         self.control_frame = tk.Frame(master=self)
         self.auto_gather_checkbutton = tk.Checkbutton(master=self.control_frame, text="Auto Gather", variable=self.auto_check, onvalue=True, offvalue=False, command=self.on_auto_gather_toggle)
-        self.gather_prg_button = tk.Button(master=self.control_frame, text="Gather All NC", command=gather_prg.gather_prg, padx=20, pady=20)
-        self.gather_asc_button = tk.Button(master=self.control_frame, text="Gather All ASC", command=gather_prg.gather_asc, padx=20, pady=20)
+        self.gather_prg_button = tk.Button(master=self.control_frame, text="Gather All NC", command=self.gather_prg, padx=20, pady=20)
+        self.gather_asc_button = tk.Button(master=self.control_frame, text="Gather All ASC", command=self.gather_asc, padx=20, pady=20)
 
         self.info_widget = info_widget.InfoWidget()
         self.info_widget.updateErrors(self.fm)
@@ -41,11 +41,14 @@ class App(tk.Tk):
 
         self.stop_event = threading.Event()
         self.enabled_event = threading.Event()
-        self.auto_gather_thread = threading.Thread(target=self.auto_gather, args=[gather_prg.REMOTE_PRG_PATH, self.stop_event, self.enabled_event])
+        self.auto_gather_thread = threading.Thread(target=self.auto_gather, args=[self.stop_event, self.enabled_event])
         self.auto_gather_thread.start()
 
-        # self.update_fm_thread = threading.Thread(target=self.update_fm, args=[self.stop_event])
-        # self.update_fm_thread.start()
+    def gather_prg(self):
+        self.fm.copy_all_valid_files()
+
+    def gather_asc(self):
+        self.fm.copy_asc_files()
 
     def print_value(self):
         print(self.auto_check.get())
@@ -62,16 +65,21 @@ class App(tk.Tk):
 
     def on_close(self):
         self.stop_event.set()
-        self.fm.save()
+        self.fm.save("test.json")
         self.destroy()
 
-    def auto_gather(self, path, disable_event:threading.Event, enabled_event:threading.Event):
+    def auto_gather(self, disable_event:threading.Event, enabled_event:threading.Event):
         while True:
             if self.fm.process():
                     self.info_widget.updateErrors(self.fm)
-            if(enabled_event.is_set()):
-                pass
-                time.sleep(1)
+            if enabled_event.is_set():
+                try:
+                    self.fm.copy_all_valid_files()
+                except (FileNotFoundError, UnicodeDecodeError, PermissionError, OSError) as e:
+                    print(e)
+                    self.auto_check.set(False)
+
+                    
             if(disable_event.is_set()):
                 return False
 

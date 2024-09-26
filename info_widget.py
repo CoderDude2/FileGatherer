@@ -60,7 +60,7 @@ class InfoWidget(tk.Frame):
                 return issue
         
     def render(self):
-        new_text = tk.Text(self,wrap='none', font="Arial 11", state='disabled')
+        new_text = tk.Text(self,wrap='none', font="Arial 11", state='disabled', cursor='arrow')
         new_text.bind("<Button-3>", self.on_right_click)
 
         new_text.tag_configure('spacer', font='Arial 3')
@@ -142,6 +142,7 @@ class InfoWidget(tk.Frame):
                     new_text.insert('end', f' Location: {i.location} \n', ('warning', bg_tag))
                     new_text.insert('end', '\n', ('warning', 'spacer2'))
                     i.line_end = int(new_text.index('end-1l').split('.')[0])
+            new_text.insert('end', '\n', ('spacer'))
         new_text['state'] = 'disabled'
 
         self.text.destroy()
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     # root.minsize(500, 300)
     f = tk.Frame(root)
     fm = FileManager()
-    fm.copy_files = True
+    # fm.copy_files = True
     fm.load()
 
     infoWidget = InfoWidget(root)
