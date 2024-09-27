@@ -134,6 +134,14 @@ class InfoWidget(tk.Frame):
                     new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
                     new_text.insert('end', '\n', ('error', 'spacer2'))
                     i.line_end = int(new_text.index('end-1l').split('.')[0])
+                case IssueType.INTERNAL_NAME_ERR:
+                    i.line_start = int(new_text.index('end-1l').split('.')[0])
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                    new_text.insert('end'," Error: File name and internal name don't match\n", ('error', 'issue_message', bg_tag))
+                    new_text.insert('end', f' File: {i.file} \n', ('error', bg_tag))
+                    new_text.insert('end', f' Location: {i.location} \n', ('error', bg_tag))
+                    new_text.insert('end', '\n', ('error', 'spacer2'))
+                    i.line_end = int(new_text.index('end-1l').split('.')[0])
                 case IssueType.DUPLICATE_PRG_ERR:
                     i.line_start = int(new_text.index('end-1l').split('.')[0])
                     new_text.insert('end', '\n', ('warning', 'spacer2'))
@@ -177,53 +185,3 @@ class InfoWidget(tk.Frame):
     def open_file_location(self, path):
         if path:
             os.system(f'C:\\Windows\\explorer.exe {path}')
-
-if __name__ == "__main__":
-
-    root = tk.Tk()
-
-    stop_event = threading.Event()
-    def on_close():
-        stop_event.set()
-        fm.save()
-        root.destroy()
-
-    root.protocol("WM_DELETE_WINDOW", on_close)
-    root.geometry("500x300")
-    # root.minsize(500, 300)
-    f = tk.Frame(root)
-    fm = FileManager()
-    # fm.copy_files = True
-    fm.load()
-
-    infoWidget = InfoWidget(root)
-    infoWidget.updateErrors(fm)
-
-    def update(stop_event:threading.Event):
-        while True:
-            if fm.process():
-                infoWidget.updateErrors(fm)
-
-            if(stop_event.is_set()):
-                return False
-    
-    
-    update_thread = threading.Thread(target=update, args=[stop_event])
-    update_thread.start()
-
-    btn_frame = tk.Frame(root, padx=5, pady=5)
-    toggle = tk.Checkbutton(btn_frame, text="Auto Gather")
-    btn = tk.Button(btn_frame, text="Gather ALL NC", padx=20, pady=20, width=10)
-    btn2 = tk.Button(btn_frame, text="Gather ALL ASC", padx=20, pady=20, width=10)
-
-    toggle.pack(side=tk.TOP)
-    btn.pack(fill=tk.X, side=tk.TOP)
-    btn2.pack(fill=tk.X, side=tk.TOP)
-
-    btn_frame.grid(row=0, column=0, sticky='nsew')
-    infoWidget.grid(row=0, column=1, sticky='nsew')
-
-    root.grid_columnconfigure(0, weight=0)
-    root.grid_columnconfigure(1, weight=1)
-    root.grid_rowconfigure(0, weight=1)
-    root.mainloop()

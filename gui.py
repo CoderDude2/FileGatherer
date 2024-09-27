@@ -76,8 +76,7 @@ class App(tk.Tk):
                 try:
                     self.fm.copy_all_valid_files()
                 except (FileNotFoundError, UnicodeDecodeError, PermissionError, OSError) as e:
-                    print(e)
-                    self.auto_check.set(False)
+                    print(e, type(e))
 
                     
             if(disable_event.is_set()):

@@ -33,7 +33,8 @@ IssueType = Enum('IssueType',[
     'INVALID_NAME_ERR',
     'DUPLICATE_PRG_ERR',
     'PART_LENGTH_ERR',
-    'MISSING_UG_VALUES_ERR'])
+    'MISSING_UG_VALUES_ERR',
+    'INTERNAL_NAME_ERR'])
 
 def check_file(path) -> list[IssueType]:
     issues:list[IssueType] = []
@@ -81,7 +82,6 @@ def check_file(path) -> list[IssueType]:
                 if contents[i+1].split('=')[1].strip() != '':
                     part_length = float(contents[i+1].split('=')[1].strip())
                     
-
         if "T0100 (CUT-OFF)" in line:
             cut_off = float(contents[i+2][4:])
         
@@ -100,6 +100,9 @@ def check_file(path) -> list[IssueType]:
         if "#105=" in line:
             contains_ug_105 = True
 
+    if file_name.split('.')[0] not in first_line:
+        issues.append(IssueType.INTERNAL_NAME_ERR)
+    
     if not contains_subprogram_0: 
         issues.append(IssueType.SUBPROGRAM_0_ERR)
     if not contains_subprogram_1:
@@ -193,8 +196,6 @@ def is_asc_file(file_path) -> bool:
 class FileManager:
     def __init__(self):
         self.processed_files = {}
-        self.copy_files = False
-
     def process(self) -> bool:
         updated = False
 
@@ -244,13 +245,8 @@ class FileManager:
         return updated
     
     def copy_all_valid_files(self):
-        if self.copy_files:
-            if not os.path.exists(os.path.join(REMOTE_PRG_PATH, 'ALL')):
-                os.mkdir(os.path.join(REMOTE_PRG_PATH, 'ALL'))
-
-        if self.copy_asc_files:
-            if not asc_folder_exists(REMOTE_PRG_PATH):
-                create_asc_folder(REMOTE_PRG_PATH)
+        if not os.path.exists(os.path.join(REMOTE_PRG_PATH, 'ALL')):
+            os.mkdir(os.path.join(REMOTE_PRG_PATH, 'ALL'))
         
         for name, data in self.processed_files.items():
             file_path = os.path.join(data['location'], name)
@@ -312,8 +308,6 @@ class FileManager:
 
 if __name__ == "__main__":
     fm = FileManager()
-    fm.copy_files = True
-    fm.copy_asc_files = False
     while True:
         try:
             fm.process()
