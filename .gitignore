@@ -7,3 +7,4 @@
 *.zip
 /nc
 *.json
+.DS_Store
