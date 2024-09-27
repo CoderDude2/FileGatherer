@@ -54,6 +54,8 @@ def check_file(path) -> list[IssueType]:
         case_type = 'TLOC'
     elif 'AOT14' in first_line:
         case_type = 'AOT'
+    elif 'ATPL' in first_line:
+        case_type = 'ATPL'
     else:
         case_type = 'DS'
 
@@ -77,13 +79,15 @@ def check_file(path) -> list[IssueType]:
         if '$2' in line:
             contains_subprogram_2 = True
         
-        if "(PartLength)" in line:
-            if "#100=" in contents[i+1]:
-                if contents[i+1].split('=')[1].strip() != '':
-                    part_length = float(contents[i+1].split('=')[1].strip())
+        if "#100=" in line:
+            if line.split('=')[1].strip() != '':
+                part_length = float(line.split('=')[1].strip())
                     
         if "T0100 (CUT-OFF)" in line:
-            cut_off = float(contents[i+2][4:])
+            if case_type == 'ATPL':
+                cut_off = float(contents[i+4].split(' ')[2][1:])
+            else:
+                cut_off = float(contents[i+2][4:])
         
         if "#101=" in line:
             contains_ug_101 = True
@@ -112,7 +116,6 @@ def check_file(path) -> list[IssueType]:
 
     if round(math.fabs(part_length - cut_off), 4) > 0.01:
         issues.append(IssueType.PART_LENGTH_ERR)
-        print(file_name, part_length, cut_off, path)
 
     if not prg_regex.match(file_name):
         issues.append(IssueType.INVALID_NAME_ERR)
@@ -207,7 +210,6 @@ class FileManager:
         
         for key in keys_to_remove:
             del(self.processed_files[key])
-            print(key, "Deleted")
             updated = True
 
         for root, dirs, files in os.walk(REMOTE_PRG_PATH):
