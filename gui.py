@@ -12,6 +12,7 @@ class MenuBar(tk.Menu):
         self.file_menu.add_command(label='   Exit   ', command=master.on_close)
 
         self.help_menu = tk.Menu(self, tearoff=False)
+        self.help_menu.add_command(label='   View Help   ')
 
         self.add_cascade(label='File', menu=self.file_menu)
         self.add_cascade(label='Help', menu=self.help_menu)
