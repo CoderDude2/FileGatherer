@@ -1,6 +1,5 @@
 import tkinter as tk
 import threading
-import time
 
 import info_widget
 import file_manager
@@ -9,12 +8,13 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.fm = file_manager.FileManager()
-        self.fm.load("test.json")
+        self.fm.load("data.json")
         self.fm.process()
 
-        self.minsize(500, 300)
-        self.geometry("500x300")
-        self.minsize(500, 300)
+        
+        self.geometry("445x275")
+        self.minsize(445, 275)
+
         self.title("File Gather")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -65,7 +65,7 @@ class App(tk.Tk):
 
     def on_close(self):
         self.stop_event.set()
-        self.fm.save("test.json")
+        self.fm.save("data.json")
         self.destroy()
 
     def auto_gather(self, disable_event:threading.Event, enabled_event:threading.Event):

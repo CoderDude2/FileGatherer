@@ -18,7 +18,7 @@ def date_as_path(date=None):
     return os.path.join(_year, _month, _day)
 
 REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
-# REMOTE_PRG_PATH = r'C:\Users\TruUser\Documents\gather\gather\test'
+TODAYS_DATE = datetime.datetime.now().date()
 
 def xcopy(src:str, dst:str) -> None:
     if os.name == 'nt':
@@ -264,6 +264,8 @@ class FileManager:
 
     def save(self, json_file_path):
         serialized_processed_files = {}
+        
+        serialized_processed_files["date"] = f'{TODAYS_DATE.month}{TODAYS_DATE.day}'
 
         for key, entry in self.processed_files.items():
             location = entry['location']
@@ -287,34 +289,31 @@ class FileManager:
             with open(json_file_path, 'r') as file:
                 contents = file.read()
             json_data = json.loads(contents)
+            if json_data['date'] != f'{TODAYS_DATE.month}{TODAYS_DATE.day}':
+                self.processed_files = {}
+            else:
+                del(json_data['date'])
+                for key, entry in json_data.items():
+                    deserialized_location = entry['location']
+                    deserialized_mtime = entry['mtime']
+                    deserialized_errors = [IssueType(i) for i in entry['errors']]
+                    deserialized_duplicates = []
 
-            for key, entry in json_data.items():
-                deserialized_location = entry['location']
-                deserialized_mtime = entry['mtime']
-                deserialized_errors = [IssueType(i) for i in entry['errors']]
-                deserialized_duplicates = []
-
-                for duplicate in entry['duplicates']:
-                    deserialized_duplicate_location = duplicate['location']
-                    deserialized_duplicate_mtime = duplicate['mtime']
-                    deserialized_duplicate_errors = [IssueType(i) for i in duplicate['errors']]
-                    deserialized_duplicate = {'location':deserialized_duplicate_location, 'mtime':deserialized_duplicate_mtime, 'errors':deserialized_duplicate_errors}
-                    deserialized_duplicates.append(deserialized_duplicate)
-                
-                deserialized_entry = {'location':deserialized_location, 'mtime':deserialized_mtime, 'errors':deserialized_errors, 'duplicates':deserialized_duplicates}
-                self.processed_files[key] = deserialized_entry
+                    for duplicate in entry['duplicates']:
+                        deserialized_duplicate_location = duplicate['location']
+                        deserialized_duplicate_mtime = duplicate['mtime']
+                        deserialized_duplicate_errors = [IssueType(i) for i in duplicate['errors']]
+                        deserialized_duplicate = {'location':deserialized_duplicate_location, 'mtime':deserialized_duplicate_mtime, 'errors':deserialized_duplicate_errors}
+                        deserialized_duplicates.append(deserialized_duplicate)
+                    
+                    deserialized_entry = {'location':deserialized_location, 'mtime':deserialized_mtime, 'errors':deserialized_errors, 'duplicates':deserialized_duplicates}
+                    self.processed_files[key] = deserialized_entry
         else:
             self.processed_files = {}
 
 if __name__ == "__main__":
     fm = FileManager()
-    while True:
-        try:
-            fm.process()
-        except KeyboardInterrupt:
-            break
-    # for key, value in fm.processed_files.items():
-    #     print(key, value)
+    fm.load('data.json')
     # fm.process()
-    # fm.save()
+    fm.save('data.json')
     
