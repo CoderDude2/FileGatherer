@@ -4,6 +4,18 @@ import threading
 import info_widget
 import file_manager
 
+class MenuBar(tk.Menu):
+    def __init__(self, master=None):
+        super().__init__(master)
+
+        self.file_menu = tk.Menu(self, tearoff=False)
+        self.file_menu.add_command(label='   Exit   ', command=master.on_close)
+
+        self.help_menu = tk.Menu(self, tearoff=False)
+
+        self.add_cascade(label='File', menu=self.file_menu)
+        self.add_cascade(label='Help', menu=self.help_menu)
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -11,12 +23,13 @@ class App(tk.Tk):
         self.fm.load("data.json")
         self.fm.process()
 
-        
         self.geometry("445x275")
         self.minsize(445, 275)
 
         self.title("File Gather")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.menu_bar = MenuBar(self)
 
         self.auto_check = tk.BooleanVar()
 
@@ -38,6 +51,8 @@ class App(tk.Tk):
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
+
+        self.config(menu=self.menu_bar)
 
         self.stop_event = threading.Event()
         self.enabled_event = threading.Event()
