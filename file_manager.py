@@ -17,7 +17,8 @@ def date_as_path(date=None):
     _year = f'Y{str(date.year)}'
     return os.path.join(_year, _month, _day)
 
-REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+# REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. CAM\3. NC files'
+REMOTE_PRG_PATH = "./nc"
 TODAYS_DATE = datetime.datetime.now().date()
 
 def xcopy(src:str, dst:str) -> None:
@@ -114,7 +115,7 @@ def check_file(path) -> list[IssueType]:
     if not contains_subprogram_2:
         issues.append(IssueType.SUBPROGRAM_2_ERR)
 
-    if round(math.fabs(part_length - cut_off), 4) > 0.01:
+    if round(math.fabs(part_length - cut_off), 4) > 0.015:
         issues.append(IssueType.PART_LENGTH_ERR)
 
     if not prg_regex.match(file_name):

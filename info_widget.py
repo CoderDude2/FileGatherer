@@ -50,7 +50,10 @@ class InfoWidget(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.text.bind("<Button-3>", self.on_right_click)
+        if os.name == 'nt':
+            self.text.bind("<Button-3>", self.on_right_click)
+        else:
+            self.text.bind("<Button-2>", self.on_right_click)
 
     def get_issue_by_pos(self, x, y) -> GUIError:
         line = int(self.text.index(f'@{x},{y}').split('.')[0])
@@ -61,7 +64,10 @@ class InfoWidget(tk.Frame):
         
     def render(self):
         new_text = tk.Text(self,wrap='none', font="Arial 11", state='disabled', cursor='arrow')
-        new_text.bind("<Button-3>", self.on_right_click)
+        if os.name == 'nt':
+            new_text.bind("<Button-3>", self.on_right_click)
+        else:
+            new_text.bind("<Button-2>", self.on_right_click)
 
         new_text.tag_configure('spacer', font='Arial 3')
         new_text.tag_configure('spacer2', font='Arial 2')
@@ -184,4 +190,7 @@ class InfoWidget(tk.Frame):
     
     def open_file_location(self, path):
         if path:
-            os.system(f'C:\\Windows\\explorer.exe {path}')
+            if os.name == 'nt':
+                os.system(f'C:\\Windows\\explorer.exe {path}')
+            else:
+                os.system(f'open "{path}"')

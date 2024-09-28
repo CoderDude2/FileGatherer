@@ -10,15 +10,73 @@
     <main>
         <h1>FileGather Help</h1>
 
-        <img src="../images/gather_app.png">
+        <img class="gather-app-img-1" src="../images/gather_app.png">
 
         <h2>The Controls</h2>
+
+        <p>On the left side of the prgram there are three controls for gathering the PRG files.</p>
+
         <ul>
-            <li>Auto-Gather</li>
-            <li>Gather ALL NC</li>
-            <li>Gather ALL ASC</li>
+            <li>
+                Auto-Gather
+                <ul>
+                    <li>When enabled, the program will continuously checks the NC folder for valid PRG files to be gathered.
+                </ul>
+            </li>
+
+            <li>
+                Gather ALL NC
+                <ul>
+                    <li>When pressed, the program will look through the NC folder once and gather all valid PRG files.</li>
+                </ul>
+            </li>
+
+            <li>
+                Gather ALL ASC
+                <ul>
+                    <li>When pressed, the program will only gather valid ASC files. </li>
+                    <li>When gathering it will create a new ASC folder, the folder will have the date and the amount of files contained within the folder.</li>
+                    <li><b><u>ASC folder format:</u> <span style="color: blue;">month</span>.<span style="color: red;">day</span>_ASC_(<span style="color: green;">no. of files</span>)</b></li>
+                </ul>
+            </li>
         </ul>
-        
+        <br>
+        <h2>The Error Panel</h2>
+        <p>While the program is running, it will check all NC files for errors. If it finds any, they will be displayed on the error panel.</p>
+        <h3>Errors</h3>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;An error is shown if the file being checked contains a major issue that prevents it from being gathered.</p>
+            <h4>Error Types:</h4>
+            <ul>
+                <li>Subprogram Missing Error
+                    <ul><li>Shown if the file is missing the $0, $1, or $2 operation.</li></ul>
+                </li>
+                <li>Invalid Name Error
+                    <ul><li>Shown if the file does not meet proper naming conventions.</li></ul>
+                </li>
+                <li>Part Length Error
+                    <ul><li>If the part-length and the cut-off differ by 0.015 or more.</li></ul>
+                </li>
+
+                <li>Missing UG Values Error
+                    <ul><li>If the case is special and does not UG values</li></ul>
+                </li>
+                
+                <li>Internal Name Error
+                    <ul><li>If the ID in the file name and ID in the first line do not match.</li></ul>
+                </li>
+                
+            </ul>
+        <h3>Warnings</h3>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;A warning is shown if the file being checked contains a minor issue, but will still be gathered.</p>
+        <h4>Warning Types:</h4>
+        <ul>
+            <li>Duplicate PRG Warning
+                <ul>
+                    <li>If there are duplicates of the same PRG file in multiple locations, this warning will be shown.</li>
+                    <li>When encountering duplicate files, the program will ony gather the first file it finds with that name, subsequent files with the same name will not be gathered.</li>
+                </ul>
+            </li>
+        </ul>
     </main>
 </body>
 </html>
