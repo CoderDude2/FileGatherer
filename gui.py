@@ -1,9 +1,12 @@
-import tkinter as tk
 import threading
+import tkinter as tk
+import os
+from pathlib import Path
 
 import info_widget
 import file_manager
-import os
+
+ROOT_DIR = Path(__file__).resolve().parent
 
 class MenuBar(tk.Menu):
     def __init__(self, master=None):
@@ -20,15 +23,15 @@ class MenuBar(tk.Menu):
     
     def on_help_option(self):
         if os.name == 'nt':
-            os.system(f'start ./resources/help/index.html')
+            os.system(f'start {os.path.join(ROOT_DIR, "resources/help/index.html")}')
         elif os.name == 'posix':
-            os.system(f'open ./resources/help/index.html')
+            os.system(f'open {os.path.join(ROOT_DIR, "resources/help/index.html")}')
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.fm = file_manager.FileManager()
-        self.fm.load("data.json")
+        self.fm.load(os.path.join(ROOT_DIR, "data.json"))
         self.fm.process()
 
         self.geometry("445x275")
@@ -88,7 +91,7 @@ class App(tk.Tk):
 
     def on_close(self):
         self.stop_event.set()
-        self.fm.save("data.json")
+        self.fm.save(os.path.join(ROOT_DIR, "data.json"))
         self.destroy()
 
     def auto_gather(self, disable_event:threading.Event, enabled_event:threading.Event):

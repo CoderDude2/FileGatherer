@@ -1,10 +1,8 @@
 import os
-import time
 import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
 from file_manager import FileManager, IssueType
-import threading
 
 @dataclass
 class GUIError:
