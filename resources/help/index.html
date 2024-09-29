@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="style.css">
     <title>FileGather Help</title>
 </head>
-<body>
+<body class="light-theme">
+    <button id="theme-toggle">Light Mode</button>
     <main>        
         <h1>File Gatherer Help</h1>
 
@@ -17,62 +18,85 @@
 
             <dl class="controls-info">
                 <dt>Auto-Gather</dt>
-                <dd>When enabled, the program will continuously checks the NC folder for valid PRG files to be gathered.</dd>
+                <dd>- When enabled, the program will continuously checks the NC folder for valid PRG files to be gathered.</dd>
 
                 <dt>Gather ALL NC</dt>
-                <dd>When pressed, the program will look through the NC folder once and gather all valid PRG files.</dd>
+                <dd>- When pressed, the program will look through the NC folder once and gather all valid PRG files.</dd>
 
                 <dt>Gather ALL ASC</dt>
-                <dd>When pressed, the program will only gather valid ASC files.</dd>
-                <dd>When gathering it will create a new ASC folder, the folder will have the date and the amount of files contained within the folder.</dd>
-                <dd><b><u>ASC folder format:</u> <span style="color: blue;">month</span>.<span style="color: red;">day</span>_ASC_(<span style="color: green;">no. of files</span>)</b></dd>
+                <dd>- When pressed, the program will only gather valid ASC files.</dd>
+                <dd>- When gathering it will create a new ASC folder, the folder will have the date and the amount of files contained within the folder.</dd>
+                <dd>- <b><u>ASC folder format:</u> <span style="color: rgb(115, 129, 199);">month</span>.<span style="color: rgb(199, 115, 115);">day</span>_ASC_(<span style="color: rgb(118, 199, 115);">no. of files</span>)</b></dd>
             </dl>
         </div>
 
         <div class="errors-section">
             <h2>The Error Panel</h2>
 
-            <p>While the program is running, it will check all NC files for errors. If it finds any, they will be displayed on the error panel.</p>
+            <p>The program continuously scans every file in the NC folder for errors. When the program encounters an error, it is displayed on the error panel. Below is an example of an error message.</p>
 
             <img src="../images/error.png" alt="Error example" class="error-img">
-            <p>Above is an example of an error message. It includes the file name, the location of the file, and what is wrong with the file. Right clicking an error will give you the option to open the location of the file.</p>
+            <p>Each message includes the file name, the location of the file, and what is wrong with the file. Right clicking an error will give you the option to open the location of the file.</p>
 
             <h3>Errors</h3>
-                <p>An error is shown if the file being checked contains a major issue that prevents it from being gathered.</p>
-                <h4>Error Types:</h4>
-                <ul>
-                    <li>Subprogram Missing Error
-                        <ul><li>Shown if the file is missing the $0, $1, or $2 operation.</li></ul>
-                    </li>
-                    <li>Invalid Name Error
-                        <ul><li>Shown if the file does not meet proper naming conventions.</li></ul>
-                    </li>
-                    <li>Part Length Error
-                        <ul><li>If the part-length and the cut-off differ by 0.015 or more.</li></ul>
-                    </li>
+                <p>An error is shown if the file being checked contains a major issue that prevents it from being gathered. Below is an explanation of each error type.</p>
 
-                    <li>Missing UG Values Error
-                        <ul><li>If the case is special and does not contain UG values</li></ul>
-                    </li>
-                    
-                    <li>Internal Name Error
-                        <ul><li>If the ID in the file name and the ID in the first line of the PRG file do not match.</li></ul>
-                    </li>
-                    
-                </ul>
-            
+                <dl>
+                    <dt>Subprogram Missing Error</dt>
+                    <dd>- Shown if the file is missing the $0, $1, or $2 operation.</dd>
+
+                    <dt>Invalid Name Error</dt>
+                    <dd>- Shown if the file does not meet proper naming conventions.</dd>
+
+                    <dt>Part Length Error</dt>
+                    <dd>- If the part-length and the cut-off differ by 0.015 or more.</dd>
+
+                    <dt>Missing UG Values Error</dt>
+                    <dd>- If the case is special and does not contain UG values.</dd>
+
+                    <dt>Internal Name Error</dt>
+                    <dd>- If the ID in the file name and the ID in the first line of the PRG file do not match.</dd>
+                </dl>
             <h3>Warnings</h3>
-            <p>A warning is shown if the file being checked contains a minor issue, but will still be gathered.</p>
-            <h4>Warning Types:</h4>
-            <ul>
-                <li>Duplicate PRG Warning
-                    <ul>
-                        <li>If there are duplicates of the same PRG file in multiple locations, this warning will be shown.</li>
-                        <li>When encountering duplicate files, the program will ony gather the first file it finds with that name, subsequent files with the same name will not be gathered.</li>
-                    </ul>
-                </li>
-            </ul>
+            <p>A warning is shown if the file being checked contains a minor issue, but will still be gathered. Currently only one warning type exists.</p>
+
+            <dl>
+                <dt>Duplicate PRG Warning</dt>
+                <dd>- If there are duplicates of the same PRG file in multiple locations, this warning will be shown.</dd>
+                <dd>- When encountering duplicate files, the program will ony gather the first file it finds with that name, subsequent files with the same name will not be gathered.</dd>
+            </dl>
         </div>
     </main>
+    <script defer>
+        let theme_toggle = document.getElementById("theme-toggle");
+        let darkMode = localStorage.getItem("darkMode") == "true";
+
+        if(darkMode){
+            dark_mode();
+        }
+
+        function dark_mode(){
+            document.body.classList.remove("light-theme");
+            document.body.classList.add("dark-theme");
+            theme_toggle.textContent = "Dark Mode"
+        }
+
+        function light_mode(){
+            document.body.classList.remove("dark-theme");
+            document.body.classList.add("light-theme");
+            theme_toggle.textContent = "Light Mode"
+        }
+
+        function swap_theme(){
+            darkMode = !darkMode;
+            if (darkMode){
+                dark_mode()
+            } else {
+                light_mode()
+            }
+            localStorage.setItem("darkMode", darkMode)
+        }
+        theme_toggle.addEventListener("click", swap_theme)
+    </script>
 </body>
 </html>

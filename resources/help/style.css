@@ -16,7 +16,6 @@ body{
 main{
     padding: 1rem;
     margin: auto;
-    /* background-color: #DDDDDD; */
     width: 80%;
 }
 
@@ -46,7 +45,6 @@ p, h1, h2, h3, h4, h5, h6 {
 
 dt{
     font-weight: bold;
-    text-decoration: underline;
     margin-top: 0.5em;
 }
 
@@ -55,17 +53,9 @@ dd{
     margin-left: 2em;
 }
 
-.controls-header{
-    
-}
-
 .controls-description{
     margin-top: 0.5em;
     margin-bottom: 0.5em;
-}
-
-.controls-info{
-
 }
 
 .errors-section{
@@ -92,4 +82,43 @@ dd{
     margin: auto;
     margin-top: 1em;
     margin-bottom: 1em;
+}
+
+#theme-toggle{
+    float: right;
+    margin: 0.25em;
+    background-color: rgba(0, 0, 0, 0);
+    border: 1px solid black;
+    transition: 0.4s ease-in-out;
+    border-radius: 2em;
+    padding: 0.4em 1em;
+}
+
+#theme-toggle:hover{
+    background-color: black;
+    color: white;
+    
+}
+
+.dark-theme{
+    background-color: #333333;
+    color: white;
+}
+
+.dark-theme .errors-section{
+    border-color: white;
+}
+
+.dark-theme .controls-section{
+    border-color: white;
+}
+
+.dark-theme #theme-toggle{
+    border-color: white;
+    color: white;
+}
+
+.dark-theme #theme-toggle:hover{
+    background-color: white;
+    color: black;
 }
