@@ -23,7 +23,7 @@ REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. C
 TODAYS_DATE = datetime.datetime.now().date()
 
 def xcopy(src:str, dst:str) -> None:
-    shutil.copy(src, dst)
+    shutil.copy2(src, dst)
 
 IssueType = Enum('IssueType',[
     'SUBPROGRAM_0_ERR',
