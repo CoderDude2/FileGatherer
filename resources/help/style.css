@@ -122,3 +122,9 @@ dd{
     background-color: white;
     color: black;
 }
+
+.description-container{
+    display: flex;
+    justify-content: space-evenly;
+    gap: 1em;
+}

@@ -36,8 +36,9 @@ class App(tk.Tk):
 
         self.geometry("445x275")
         self.minsize(445, 275)
+        self.iconbitmap(os.path.join(ROOT_DIR, "resources", "icons", "tru-gather.ico"))
 
-        self.title("File Gather")
+        self.title("TruGather")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         self.menu_bar = MenuBar(self)
