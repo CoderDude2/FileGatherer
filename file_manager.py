@@ -4,6 +4,8 @@ import math
 import os
 import re
 from enum import Enum
+import subprocess
+import shutil
 
 prg_regex = re.compile(r'(\d{4,})([A-Za-z.]+)')
 asc_folder_regex = re.compile(r"\d+.\d+_ASC_\((\d+)\)")
@@ -21,10 +23,7 @@ REMOTE_PRG_PATH = fr'\\192.168.1.100\Trubox\####ERP_RM####\{date_as_path()}\1. C
 TODAYS_DATE = datetime.datetime.now().date()
 
 def xcopy(src:str, dst:str) -> None:
-    if os.name == 'nt':
-        os.system(f'echo F |xcopy /Y "{src}" "{dst}"')
-    elif os.name == 'posix':
-        os.system(f'cp "{src}" "{dst}"')
+    shutil.copy(src, dst)
 
 IssueType = Enum('IssueType',[
     'SUBPROGRAM_0_ERR',

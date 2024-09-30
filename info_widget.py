@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from dataclasses import dataclass
 from file_manager import FileManager, IssueType
+import subprocess
 
 @dataclass
 class GUIError:
@@ -189,6 +190,6 @@ class InfoWidget(tk.Frame):
     def open_file_location(self, path):
         if path:
             if os.name == 'nt':
-                os.system(f'C:\\Windows\\explorer.exe {path}')
+                subprocess.Popen(f'explorer {path}')
             else:
-                os.system(f'open "{path}"')
+                subprocess.call("open", "-R", path)
